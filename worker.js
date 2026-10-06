@@ -8,6 +8,7 @@ async function boot() {
   await import(base + "engine.js");
   await import(base + "conf.js");
   await import(base + "priors.js");
+  await import(base + "sizes.js");
   const env = T.env;
   env.allowRemoteModels = false;
   env.allowLocalModels = true;
@@ -28,7 +29,7 @@ async function load(model) {
   loading = (async () => {
     await boot();
     eng = await self.VozEngine.create({
-      T, modelId: model, dtype: "q8", priors: self.VOZ_PRIORS,
+      T, modelId: model, dtype: "q8", priors: self.VOZ_PRIORS, sizes: self.VOZ_SIZES,
       onProgress: (p) => self.postMessage({ type: "progress", loaded: p.loaded, total: p.total })
     });
     await eng.warm();

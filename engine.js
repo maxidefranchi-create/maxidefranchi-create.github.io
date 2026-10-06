@@ -4,6 +4,27 @@
   const PREFIX = ["<|startoftranscript|>", "<|en|>", "<|transcribe|>", "<|notimestamps|>"];
   const SR = 16000;
 
+  /* GitHub Pages manda los modelos comprimidos y el Content-Length es el tamaño comprimido.
+     transformers.js reserva el buffer con ese número y después lo agranda bloque por bloque,
+     copiando decenas de MB cada vez. Con el tamaño real la descarga va derecho y la barra es exacta. */
+  function sizedFetch(env, sizes) {
+    if (!env || !sizes || env.__vozSized) return;
+    const keys = Object.keys(sizes);
+    env.fetch = async (input, init) => {
+      const r = await G.fetch(input, init);
+      try {
+        const u = typeof input === "string" ? input : (input && input.url) || String(input);
+        const path = new URL(u, G.location.href).pathname;
+        const k = keys.find((x) => path.endsWith("/" + x));
+        if (!k || !r.ok || !r.body) return r;
+        const h = new Headers(r.headers);
+        h.set("content-length", String(sizes[k]));
+        return new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
+      } catch (e) { return r; }
+    };
+    env.__vozSized = true;
+  }
+
   function lse(arr) { let m = -Infinity; for (const x of arr) if (x > m) m = x; if (m === -Infinity) return m; let s = 0; for (const x of arr) s += Math.exp(x - m); return m + Math.log(s); }
   function rowLogSoftmax(lg, V, row) {
     const o = row * V; let m = -Infinity;
@@ -50,6 +71,7 @@
 
   async function create(opts) {
     const T = opts.T, modelId = opts.modelId || "whisper-tiny";
+    if (opts.sizes) sizedFetch(T.env, opts.sizes);
     const { AutoProcessor, AutoTokenizer, WhisperForConditionalGeneration, Tensor } = T;
     const files = {};
     const progress_callback = opts.onProgress ? (p) => {

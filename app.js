@@ -233,7 +233,7 @@
         const env = T.env; env.allowRemoteModels = false; env.allowLocalModels = true; env.localModelPath = "models/"; env.useBrowserCache = "caches" in window;
         const o = env.backends.onnx; o.wasm.numThreads = 1; o.wasm.proxy = false;
         o.wasm.wasmPaths = { mjs: new URL("vendor/ort-wasm-simd-threaded.asyncify.mjs", location.href).href, wasm: new URL("vendor/ort-wasm-simd-threaded.asyncify.wasm", location.href).href };
-        const e = await window.VozEngine.create({ T, modelId: this.model, dtype: "q8", priors: window.VOZ_PRIORS, onProgress: (p) => { if (p.total) { this.loaded = p.loaded; this.total = p.total; } this.emit(); } });
+        const e = await window.VozEngine.create({ T, modelId: this.model, dtype: "q8", priors: window.VOZ_PRIORS, sizes: window.VOZ_SIZES, onProgress: (p) => { if (p.total) { this.loaded = p.loaded; this.total = p.total; } this.emit(); } });
         await e.warm();
         this.main = e; this.status = "ready"; this.emit(); this.res && this.res();
       } catch (err) { this.status = "error"; this.err = String((err && err.message) || err); this.emit(); if (this.rej) this.rej(new Error(this.err)); this.ready = null; }
