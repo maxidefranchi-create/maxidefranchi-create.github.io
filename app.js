@@ -959,7 +959,7 @@
     const best = ST.convs || {};
     app.innerHTML = `<div class="screen stack">${header("Charlá", "Conversación")}
       <p class="muted">Hablás con personajes en situaciones reales. Te escuchan, te contestan y te marcan lo que conviene corregir.</p>
-      <section class="stack"><h3>Situaciones</h3><div class="list">${CV.SCENES.map((sc) => { const b = best[sc.id]; return `<button class="item" data-conv="${sc.id}">${avatar(sc.who.name)}<span style="min-width:0"><span class="t">${esc(sc.title)}</span><br><span class="s">${esc(sc.who.name)} · ${esc(sc.sub)}</span></span>${b ? `<span class="pill ${b.best >= 75 ? "good" : b.best >= 50 ? "mid" : "bad"}">${b.best}%</span>` : `<span class="pill">${esc(sc.level)}</span>`}</button>`; }).join("")}</div></section>
+      ${[["Trabajo", ["meet", "meeting", "interview", "pitch", "disagree", "press", "agency", "dinner"]], ["Viajes y vida diaria", null]].map(([title, ids], gi, all) => { const used = new Set(all[0][1]); const list = CV.SCENES.filter((sc) => (ids ? ids.includes(sc.id) : !used.has(sc.id))); return `<section class="stack"><h3>${title}</h3><div class="list">${list.map((sc) => { const b = best[sc.id]; return `<button class="item" data-conv="${sc.id}">${avatar(sc.who.name)}<span style="min-width:0"><span class="t">${esc(sc.title)}</span><br><span class="s">${esc(sc.who.name)} · ${esc(sc.sub)}</span></span>${b ? `<span class="pill ${b.best >= 75 ? "good" : b.best >= 50 ? "mid" : "bad"}">${b.best}%</span>` : `<span class="pill">${esc(sc.level)}</span>`}</button>`; }).join("")}</div></section>`; }).join("")}
       <section class="card aicard"><div class="row" style="gap:12px;flex-wrap:nowrap"><span class="badge spark">${I.spark}</span><div style="min-width:0"><h3>Charla libre con Claude</h3><p class="small muted">Sin guion: hablás de lo que quieras y te contesta en voz alta.</p></div></div><button class="btn primary" data-go="ia">Elegir tema ${I.next}</button></section>
       <section class="card flat"><h3>Respuesta libre</h3><p class="small muted">Respondé una pregunta durante hasta 30 segundos y mirá qué se entendió.</p><button class="btn sm" data-go="habla">${I.chat} Probar</button></section>
     </div>`;
@@ -1003,6 +1003,8 @@
   const expandC = (n) => EXPAND.reduce((a, [re, r]) => a.replace(re, r), n);
   const titleCase = (x) => String(x).replace(/\b[a-z]/g, (c) => c.toUpperCase());
   function fillT(text) {
+    if (Array.isArray(text) && !CONV) text = text[0];
+    if (Array.isArray(text)) { CONV._pick = CONV._pick || new Map(); if (!CONV._pick.has(text)) CONV._pick.set(text, pick(text)); text = CONV._pick.get(text); }
     const raw = (CONV && CONV.slots) || {}, sl = {};
     for (const k in raw) sl[k] = /name|city|country|place/.test(k) ? raw[k] : String(raw[k]).toLowerCase();
     return String(text).replace(/\{(\w+)\|([^}]*)\}/g, (_, k, fb) => sl[k] || fb).replace(/,?\s*\{(\w+)\}/g, (m0, k) => (sl[k] ? m0.replace("{" + k + "}", sl[k]) : ""));
@@ -1105,7 +1107,7 @@
       let next = t.next;
       (t.branch || []).some((b) => (b.if.test(both) ? ((next = b.to), true) : false));
       const reacts = (t.react || []).filter((x) => (x.match(/\{(\w+)\}/g) || []).every((ph) => my.slots[ph.slice(1, -1)]));
-      const nextSay = (my.sc.turns[next] && my.sc.turns[next].say) || "";
+      const nextSay = fillT((my.sc.turns[next] && my.sc.turns[next].say) || "");
       const startsAck = /^(sure|great|okay|ok|perfect|nice|thanks|thank you|of course|oh|wow|interesting|exactly|not at all|yes|yum|sounds|that's|let me|no problem|well|impressive)\b/i.test(nextSay);
       const pre = reacts.length ? fillT(pick(reacts)) : !startsAck && Math.random() < 0.35 ? pick(CV.ACK) : "";
       await partnerTurn(next, pre);
