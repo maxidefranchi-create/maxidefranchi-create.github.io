@@ -5,7 +5,8 @@ Laboratorio de pronunciación en inglés para hispanohablantes. Funciona en el n
 - **Pares**: decís una palabra y el reconocedor decide si sonó a esa o a su pareja (ship · sheep, very · berry, yes · jet).
 - **Frases**: cada palabra sale en verde, ámbar o rojo, y marca cuando una palabra sonó como otra.
 - **Repetí**: escuchás una frase y la repetís con la misma música.
-- **Hablá**: respondés una pregunta durante hasta 30 segundos y ves qué se entendió.
+- **Sonidos**: cómo poner la boca para cada sonido, con dibujo animado de la boca vista de costado y de frente.
+- **Charlá**: conversaciones con personajes (cafetería, hotel, migraciones, reuniones) que te contestan según lo que decís y te marcan errores. Opcional: charla libre con Claude usando tu propia clave de la API.
 
 La voz se analiza en el dispositivo. No se envía audio a ningún servidor.
 

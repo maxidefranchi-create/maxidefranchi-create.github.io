@@ -101,12 +101,39 @@
       return { lg: out.logits.data, V: out.logits.dims[2], L: out.logits.dims[1] };
     }
     /* Log-probabilidad de cada token del texto (más el fin de frase) dado el audio. */
-    async function scoreBody(enc, body, withEot) {
+    async function scoreBodyPlain(enc, body, withEot) {
       const ids = pre.concat(body, withEot === false ? [] : [eot]);
       const { lg, V } = await logits(enc, ids);
       const lps = [];
       for (let i = pre.length - 1; i < ids.length - 1; i++) { const r = rowLogSoftmax(lg, V, i); lps.push(lg[r.o + ids[i + 1]] - r.m - r.ls); }
       return lps;
+    }
+    /* Caché del comienzo: la atención sobre los 30 s de audio se calcula una sola vez por grabación.
+       Después, cada texto a evaluar es una pasada corta del decodificador. */
+    let useCache = opts.cache !== false && typeof model.getPastKeyValues === "function";
+    async function prefixState(enc) {
+      if (enc.pre) return enc.pre;
+      const out = await model({ encoder_outputs: enc.e, decoder_input_ids: idsTensor(pre) });
+      const V = out.logits.dims[2], L = out.logits.dims[1];
+      enc.pre = { last: out.logits.data.slice((L - 1) * V, L * V), V, past: model.getPastKeyValues(out, null) };
+      return enc.pre;
+    }
+    const lpAt = (lg, V, row, id) => { const r = rowLogSoftmax(lg, V, row); return lg[r.o + id] - r.m - r.ls; };
+    async function scoreBodyCached(enc, body, withEot) {
+      const ids = body.concat(withEot === false ? [] : [eot]);
+      if (!ids.length) return [];
+      const P = await prefixState(enc);
+      const lps = [lpAt(P.last, P.V, 0, ids[0])];
+      if (ids.length > 1) {
+        const out = await model({ encoder_outputs: enc.e, decoder_input_ids: idsTensor(ids.slice(0, -1)), past_key_values: P.past });
+        const lg = out.logits.data, V = out.logits.dims[2];
+        for (let i = 0; i < ids.length - 1; i++) lps.push(lpAt(lg, V, i, ids[i + 1]));
+      }
+      return lps;
+    }
+    async function scoreBody(enc, body, withEot) {
+      if (useCache) { try { return await scoreBodyCached(enc, body, withEot); } catch (e) { useCache = false; } }
+      return scoreBodyPlain(enc, body, withEot);
     }
     function groupWords(body, lps) {
       const W = [];
@@ -128,26 +155,42 @@
       const total = lps.reduce((a, b) => a + b, 0);
       return { body, lps, total, words: groupWords(body, lps.slice(0, body.length)) };
     }
-    /* Transcripción. Para frases cortas: decodificación greedy reutilizando el encoder.
-       Para habla libre: generate con caché del decodificador. Devuelve probabilidad por token. */
-    async function transcribe(enc, maxTokens) {
-      maxTokens = maxTokens || 60;
-      let out = [];
+    /* Transcripción: decodificación greedy con caché. Si la caché falla, el camino anterior. */
+    function pickNext(lg, V, row, step) {
+      const o = row * V; let best = -1, bv = -Infinity;
+      for (let v = 0; v < V; v++) {
+        if (v > eot || suppress.has(v)) continue;
+        if (step === 0 && (v === eot || v === 220)) continue;
+        const x = lg[o + v]; if (x > bv) { bv = x; best = v; }
+      }
+      return best;
+    }
+    const looping = (out) => { const n = out.length; if (n < 9) return false; const a = out.slice(n - 3).join(","), b = out.slice(n - 6, n - 3).join(","), c = out.slice(n - 9, n - 6).join(","); return a === b && b === c; };
+    async function transcribeCached(enc, maxTokens) {
+      const P = await prefixState(enc);
+      let past = P.past, lg = P.last, V = P.V;
+      const out = [];
+      for (let step = 0; step < maxTokens; step++) {
+        const best = pickNext(lg, V, 0, step);
+        if (best === eot || best < 0) break;
+        out.push(best);
+        if (looping(out)) { out.length -= 6; break; }
+        const o = await model({ encoder_outputs: enc.e, decoder_input_ids: idsTensor([best]), past_key_values: past });
+        past = model.getPastKeyValues(o, past);
+        lg = o.logits.data; V = o.logits.dims[2];
+      }
+      return out;
+    }
+    async function transcribePlain(enc, maxTokens) {
+      const out = [];
       if (maxTokens <= 48) {
         for (let step = 0; step < maxTokens; step++) {
           const ids = pre.concat(out);
           const { lg, V } = await logits(enc, ids);
-          const r = rowLogSoftmax(lg, V, ids.length - 1);
-          let best = -1, bv = -Infinity;
-          for (let v = 0; v < V; v++) {
-            if (v > eot || suppress.has(v)) continue;
-            if (step === 0 && (v === eot || v === 220)) continue;
-            const x = lg[r.o + v]; if (x > bv) { bv = x; best = v; }
-          }
+          const best = pickNext(lg, V, ids.length - 1, step);
           if (best === eot || best < 0) break;
           out.push(best);
-          const n = out.length;
-          if (n >= 9) { const a = out.slice(n - 3).join(","), b = out.slice(n - 6, n - 3).join(","), c = out.slice(n - 9, n - 6).join(","); if (a === b && b === c) { out.length -= 6; break; } }
+          if (looping(out)) { out.length -= 6; break; }
         }
       } else {
         const g = await model.generate({ input_features: enc.f, encoder_outputs: enc.e, language: "en", task: "transcribe", max_new_tokens: maxTokens });
@@ -155,6 +198,13 @@
         let k = 0; while (k < all.length && all[k] >= eot) k++;
         for (let i = k; i < all.length; i++) { if (all[i] >= eot) break; out.push(all[i]); }
       }
+      return out;
+    }
+    async function transcribe(enc, maxTokens) {
+      maxTokens = maxTokens || 60;
+      let out = null;
+      if (useCache) { try { out = await transcribeCached(enc, maxTokens); } catch (e) { useCache = false; out = null; } }
+      if (!out) out = await transcribePlain(enc, maxTokens);
       const text = tok.decode(out, { skip_special_tokens: true }).trim();
       if (!out.length) return { text, words: [] };
       const lps = await scoreBody(enc, out, false);
@@ -268,9 +318,9 @@
       return { silent: false, text: t.text, words: t.words.map((w) => ({ w: w.raw.trim(), s: w.s })), seconds: +(audio.length / SR).toFixed(1), wpm: st.speech ? Math.round(n / (st.speech / 60)) : 0, pauses: st.pauses, longest: st.longest, cut: a.length > SR * 30 };
     }
 
-    async function warm() { await encode(new Float32Array(SR)); }
+    async function warm() { const e = await encode(new Float32Array(SR)); nullEnc = e; try { await scoreBody(e, enc1(" Hello."), true); } catch (x) {} }
     async function heardLast() { if (!lastEnc) return { text: "" }; const t = await transcribe(lastEnc, 40); return { text: t.text }; }
-    return { pair, sentence, free, warm, heardLast, speechStats, tok, encode, scoreText, transcribe };
+    return { pair, sentence, free, warm, heardLast, speechStats, tok, encode, scoreText, transcribe, get cached() { return useCache; } };
   }
 
   G.VozEngine = { create, speechStats, trim, SR };
