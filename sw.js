@@ -1,5 +1,5 @@
 /* Service worker: la app abre sin internet. Los modelos los guarda el propio reconocedor. */
-const V = "voz-shell-v5";
+const V = "voz-shell-v6";
 const SHELL = ["./", "index.html", "app.css", "app.js", "data.js", "conf.js", "priors.js", "sizes.js", "mouth.js", "sounds.js", "convos.js", "dict.json", "engine.js", "worker.js", "manifest.webmanifest",
   "icons/icon.svg", "icons/icon-192.png", "icons/apple-touch-icon.png",
   "fonts/bricolage-grotesque-latin-500-normal.woff2", "fonts/bricolage-grotesque-latin-700-normal.woff2",

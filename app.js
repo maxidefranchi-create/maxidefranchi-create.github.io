@@ -102,7 +102,8 @@
     pick(o) {
       o = o || {};
       const want = (o.accent || ST.settings.accent) === "UK" ? /en[-_]GB/i : /en[-_]US/i;
-      const pool = this.voices.filter((v) => want.test(v.lang)), p = pool.length ? pool : this.voices;
+      const loc = this.voices.filter((v) => v.localService !== false), base = loc.length ? loc : this.voices;
+      const pool = base.filter((v) => want.test(v.lang)), p = pool.length ? pool : base;
       const good = /premium|enhanced|natural|neural|siri|google/i;
       if (o.tone) {
         const g = o.tone === "f" ? /samantha|ava|allison|susan|victoria|karen|moira|serena|jenny|aria|libby|sonia|kate|zira|\bfemale\b|emma|olivia|joanna|salli|kimberly|amy|fiona|tessa|nicky|martha|catherine/i : /daniel|alex|fred|\btom\b|aaron|arthur|\bguy\b|ryan|\bmale\b|david|mark|james|oliver|george|brian|matthew|justin|eric|evan|nathan|reed|rocko/i;
@@ -111,16 +112,50 @@
       }
       return p.find((v) => /premium|enhanced|natural|neural|siri|google|samantha|ava|allison|serena|daniel|jenny|aria|libby/i.test(v.name)) || p[0] || null;
     },
+    /* Algunos navegadores se tragan el audio si se cancela y se habla al toque, si la voz elegida
+       falla o si el sintetizador quedó en pausa. Por eso: pausa corta tras cancelar, resume() y un
+       reintento con la voz por defecto si a los 1,6 s no arrancó. «Lento» es lento de verdad:
+       velocidad 0,5 y, en frases largas, de a grupos de palabras con un respiro entre medio. */
+    seq: 0, cur: null,
     say(text, rate, o) {
       if (!("speechSynthesis" in window)) { toast("Este navegador no tiene voces en inglés."); return Promise.resolve(); }
-      try { speechSynthesis.cancel(); } catch (e) {}
+      const ss = speechSynthesis, token = ++this.seq;
+      if (!this.voices.length) this.init();
+      const slow = rate != null && rate < 0.85;
+      const r = slow ? 0.5 : rate || ST.settings.rate;
+      const words = String(text).trim().split(/\s+/);
+      let parts = [String(text)];
+      if (slow && words.length > 3) {
+        parts = [];
+        String(text).split(/(?<=[,.!?;:])\s+/).forEach((seg) => { const w = seg.split(/\s+/); for (let i = 0; i < w.length; i += 3) parts.push(w.slice(i, i + 3).join(" ")); });
+      }
+      const run = async () => {
+        for (let i = 0; i < parts.length; i++) {
+          if (token !== this.seq) return;
+          await this.one(parts[i], r, o, false);
+          if (slow && i < parts.length - 1) await new Promise((z) => setTimeout(z, 260));
+        }
+      };
+      const busy = ss.speaking || ss.pending;
+      if (busy) { try { ss.cancel(); } catch (e) {} }
+      try { ss.resume(); } catch (e) {}
+      return busy ? new Promise((res) => setTimeout(() => run().then(res), 120)) : run();
+    },
+    one(text, r, o, retry) {
       return new Promise((res) => {
-        const u = new SpeechSynthesisUtterance(text), v = this.pick(o);
+        const ss = speechSynthesis, u = new SpeechSynthesisUtterance(text), v = retry ? null : this.pick(o);
         if (v) { u.voice = v; u.lang = v.lang; } else u.lang = ((o && o.accent) || ST.settings.accent) === "UK" ? "en-GB" : "en-US";
         if (o && o.pitch) u.pitch = o.pitch;
-        u.rate = rate || ST.settings.rate; u.onend = res; u.onerror = res;
-        speechSynthesis.speak(u);
-        setTimeout(res, Math.max(5000, String(text).length * 110 / (u.rate || 1)));
+        u.rate = r; this.cur = u;
+        let started = false, done = false, t1 = 0, t2 = 0;
+        const fin = () => { if (done) return; done = true; clearTimeout(t1); clearTimeout(t2); res(); };
+        const again = () => { if (done) return; done = true; clearTimeout(t1); clearTimeout(t2); try { ss.cancel(); } catch (e) {} setTimeout(() => this.one(text, r, o, true).then(res), 120); };
+        u.onstart = () => { started = true; };
+        u.onend = fin;
+        u.onerror = (e) => { if (!started && !retry && e && e.error !== "interrupted" && e.error !== "canceled") again(); else fin(); };
+        ss.speak(u);
+        t1 = setTimeout(() => { if (!started && !ss.speaking && !retry) again(); }, 1600);
+        t2 = setTimeout(fin, Math.max(4000, String(text).length * 140 / r + 1500));
       });
     },
     stop() { try { speechSynthesis.cancel(); } catch (e) {} }
@@ -1118,7 +1153,7 @@
     const text = pick(CV.SORRY) + " " + fillT(t.say);
     addC({ k: "them", text, es: t.es, who: my.sc.who.name, tone: my.sc.who.tone, accent: my.sc.who.accent });
     dockListening(my, my.sc.who.name);
-    await TTS.say(text, 0.8, voiceOf(my.sc));
+    await TTS.say(text, 0.85, voiceOf(my.sc));
     if (CONV === my && $("#dock")) dockTurn();
   }
   function summaryHTML(title, score, first, total, fixes, low) {
