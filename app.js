@@ -415,7 +415,7 @@
     $$("[data-es]", root).forEach((b) => (b.onclick = () => { const es = b.closest(".bub").querySelector(".es"); if (es) { es.hidden = !es.hidden; b.setAttribute("aria-pressed", String(!es.hidden)); } }));
     $$("[data-oido]", root).forEach((b) => (b.onclick = () => { closeSheet(); go({ name: "oido", id: b.getAttribute("data-oido"), from: Object.assign({}, view, { round: undefined }) }); }));
     $$("[data-decir]", root).forEach((b) => (b.onclick = () => { closeSheet(); go({ name: "decir", text: b.getAttribute("data-decir"), label: b.getAttribute("data-dlabel") || "", from: Object.assign({}, view) }); }));
-    $$("[data-reveal]", root).forEach((b) => (b.onclick = () => { b.classList.remove("veil"); b.removeAttribute("data-reveal"); b.removeAttribute("role"); }));
+    $$("[data-reveal]", root).forEach((b) => (b.onclick = () => { if (CONV && b.closest("#log")) { CONV.reveals = (CONV.reveals || 0) + 1; CONV.help = Math.max(CONV.help || 0, 1); } b.classList.remove("veil"); b.removeAttribute("data-reveal"); b.removeAttribute("role"); }));
   }
 
   /* ---------- análisis y resultados ---------- */
@@ -1000,7 +1000,7 @@
   const avatar = (name) => `<span class="av av${avIdx(name)}" aria-hidden="true">${esc(String(name).replace(/^(Officer|Ms\.|Mr\.)\s*/, "").charAt(0))}</span>`;
   const PERSONA_TONE = { Alex: "m", Sarah: "f", Nora: "f", Emma: "f", Liam: "m", "Ms. Carter": "f", Tom: "m" };
 
-  const CATS = ["Trabajo", "Viajes", "Ciudad y servicios", "Vida social", "Imprevistos"];
+  const CATS = ["Escucha activa", "Trabajo", "Viajes", "Ciudad y servicios", "Vida social", "Imprevistos"];
   const CAT_OF = { meet: "Trabajo", meeting: "Trabajo", interview: "Trabajo", pitch: "Trabajo", disagree: "Trabajo", press: "Trabajo", agency: "Trabajo", dinner: "Trabajo", hotel: "Viajes", airport: "Viajes", street: "Viajes", flight: "Viajes", hotelfix: "Viajes", taxi: "Viajes", cafe: "Ciudad y servicios", phone: "Ciudad y servicios", restaurant: "Ciudad y servicios", pharmacy: "Ciudad y servicios", shop: "Ciudad y servicios", weekend: "Vida social", friend: "Vida social" };
   const catOf = (sc) => sc.cat || CAT_OF[sc.id] || "Vida social";
   const LEVELS = ["A2", "A2+", "B1"];
@@ -1032,7 +1032,7 @@
   /* mensajes de una charla (guiada o con Claude) */
   function msgHTML(m) {
     if (m.k === "them") {
-      const show = ST.settings.showText !== false || m.reveal;
+      const show = (!m.listen && ST.settings.showText !== false) || m.reveal;
       return `<div class="msg them">${avatar(m.who)}<div class="bub"><p class="en${show ? "" : " veil"}"${show ? "" : ' data-reveal role="button" tabindex="0" aria-label="Mostrar el texto"'}>${esc(m.text)}</p>${m.es ? `<p class="es" hidden>${esc(m.es)}</p>` : ""}<div class="tools"><button class="mini" data-say="${esc(m.text)}" data-tone="${esc(m.tone || "")}" data-accent="${esc(m.accent || "")}" aria-label="Escuchar de nuevo">${I.speaker}</button><button class="mini" data-say="${esc(m.text)}" data-tone="${esc(m.tone || "")}" data-accent="${esc(m.accent || "")}" data-slow>Lento</button>${m.es ? `<button class="mini" data-es aria-pressed="false">ES</button>` : ""}</div></div></div>`;
     }
     if (m.k === "me") {
@@ -1099,12 +1099,12 @@
   }
   function dockIntro() {
     const sc = CONV.sc;
-    $("#dock").innerHTML = `<p class="small">${esc(sc.intro)}</p>${ST.goal ? `<p class="goal">${I.bulb} <span><b>Tu objetivo en esta charla:</b> ${esc(ST.goal.text)}</span></p>` : ""}<p class="tiny">Escuchá a ${esc(sc.who.name)} y respondé con el micrófono. Si no entendés, podés decir «Sorry, can you repeat?».</p><button class="btn primary" data-act="go">${I.play} Empezar la charla</button>`;
+    $("#dock").innerHTML = `<p class="small">${esc(sc.intro)}</p>${sc.listen ? `<p class="listenfor">${I.ear} <span><b>Charla de escucha.</b> El texto aparece oculto: escuchá primero. Si no entendés, tocá «Lento» o tocá el texto para verlo (cuenta como ayuda). Antes de cada parte te digo qué dato prestar atención.</span></p>` : ""}${ST.goal ? `<p class="goal">${I.bulb} <span><b>Tu objetivo en esta charla:</b> ${esc(ST.goal.text)}</span></p>` : ""}<p class="tiny">Escuchá a ${esc(sc.who.name)} y respondé con el micrófono. Si no entendés, podés decir «Sorry, can you repeat?».</p><button class="btn primary" data-act="go">${I.play} Empezar la charla</button>`;
     $("[data-act=go]").onclick = () => { CONV.started = true; Eng.start(); partnerTurn(CONV.turn); };
   }
-  function dockListening(sess, name) {
+  function dockListening(sess, name, focus) {
     const d = $("#dock"); if (!d) return;
-    d.innerHTML = `<div class="dockrow"><span class="spin" style="color:var(--accent)"></span><p class="small muted grow">${esc(name)} está hablando…</p><button class="btn sm ghost" data-act="answer">Responder ya</button></div>`;
+    d.innerHTML = `${focus ? `<p class="listenfor">${I.ear} <span>Escuchá: <b>${esc(focus)}</b></span></p>` : ""}<div class="dockrow"><span class="spin" style="color:var(--accent)"></span><p class="small muted grow">${esc(name)} está hablando…</p><button class="btn sm ghost" data-act="answer">Responder ya</button></div>`;
     $("[data-act=answer]").onclick = () => { TTS.stop(); sess === CONV ? dockTurn() : aiDock(); };
   }
   const hintHTML = (t) => `<p class="hintline">${I.bulb} ${t.hint.map(esc).join(" · ")}</p>`;
@@ -1128,8 +1128,8 @@
     my.turn = id; my.attempt = 0; my.help = 0;
     const t = my.sc.turns[id];
     const text = ((pre ? pre + " " : "") + fillT(t.say)).trim();
-    addC({ k: "them", text, es: t.es, who: my.sc.who.name, tone: my.sc.who.tone, accent: my.sc.who.accent });
-    dockListening(my, my.sc.who.name);
+    addC({ k: "them", text, es: t.es, who: my.sc.who.name, tone: my.sc.who.tone, accent: my.sc.who.accent, listen: !!my.sc.listen });
+    dockListening(my, my.sc.who.name, t.focus);
     await TTS.say(text, null, voiceOf(my.sc));
     if (CONV !== my || my.turn !== id || !$("#dock")) return;
     if (t.end) { finishConv(); return; }
@@ -1149,7 +1149,9 @@
     const avg = words.length ? words.reduce((a, b) => a + b.s, 0) / words.length : 0;
     const nW = nrm.trim().split(" ").filter(Boolean).length;
     const plausible = avg >= 18 || nW >= 3;
-    const ok = plausible && (t.expect ? t.expect.some((re) => re.test(both)) : nW >= (t.open || 1));
+    const baseOk = plausible && (t.expect ? t.expect.some((re) => re.test(both)) : nW >= (t.open || 1));
+    const needOk = !t.need || t.need.every((re) => re.test(both));
+    const ok = baseOk && needOk, needFail = baseOk && !needOk;
     const fixes = findFixes(r.text);
     words.filter((w) => w.s < 40).forEach((w) => { const c = cleanW(w.w); if (c && !my.low.includes(c)) my.low.push(c); });
     fixes.forEach((f) => { if (!my.fixes.some((x) => x.to === f.to)) my.fixes.push(f); });
@@ -1160,14 +1162,14 @@
       addC({ k: "me", words, text: r.text, ok: true, fixes });
       addC({ k: "note", text: "Le pediste que repita: eso también es conversar." });
       const text = "Sure. " + fillT(t.say);
-      addC({ k: "them", text, es: t.es, who: my.sc.who.name, tone: my.sc.who.tone, accent: my.sc.who.accent });
-      dockListening(my, my.sc.who.name);
+      addC({ k: "them", text, es: t.es, who: my.sc.who.name, tone: my.sc.who.tone, accent: my.sc.who.accent, listen: !!my.sc.listen });
+      dockListening(my, my.sc.who.name, t.focus);
       await TTS.say(text, 0.72, voiceOf(my.sc));
       if (CONV === my && $("#dock")) dockTurn();
       return;
     }
     const upM = ok && nW < 5 && !fixes.length && t.model ? bestModel(r.text, t.model) : "";
-    addC({ k: "me", words, text: r.text, ok, fixes, up: upM && normText(upM) !== nrm ? upM : "", note: plausible ? "Eso no responde a lo que te preguntó." : "No se entendió bien. Probá de nuevo, más claro." });
+    addC({ k: "me", words, text: r.text, ok, fixes, up: upM && normText(upM) !== nrm ? upM : "", note: needFail ? `Te faltó un dato${t.focus ? " (" + t.focus + ")" : ""}. Escuchá de nuevo con atención.` : plausible ? "Eso no responde a lo que te preguntó." : "No se entendió bien. Probá de nuevo, más claro." });
     if (ok) {
       if (t.slot) for (const k in t.slot) { const m = both.match(t.slot[k]); const v = m && (m[1] || m[2]); if (v && !(k === "name" && CV.NOT_NAME.test(v))) my.slots[k] = titleCase(v.trim()); }
       my.scores.push(my.attempt === 0 ? 1 : my.attempt === 1 ? 0.6 : 0.3);
@@ -1177,14 +1179,15 @@
       const nextSay = fillT((my.sc.turns[next] && my.sc.turns[next].say) || "");
       const startsAck = /^(sure|great|okay|ok|perfect|nice|thanks|thank you|of course|oh|wow|interesting|exactly|not at all|yes|yum|sounds|that's|let me|no problem|well|impressive)\b/i.test(nextSay);
       const pre = reacts.length ? fillT(pick(reacts)) : !startsAck && Math.random() < 0.35 ? pick(CV.ACK) : "";
+      if (t.key && t.key.length) addC({ k: "html", html: keyHTML(t.key) });
       await partnerTurn(next, pre);
       return;
     }
     my.attempt++;
     if (my.attempt >= 3) { dockTurn(); return; }
-    const text = pick(CV.SORRY) + " " + fillT(t.say);
-    addC({ k: "them", text, es: t.es, who: my.sc.who.name, tone: my.sc.who.tone, accent: my.sc.who.accent });
-    dockListening(my, my.sc.who.name);
+    const text = (needFail ? pick(["Not quite. Let me say it again.", "Almost. Listen again.", "Hmm, not exactly. Here it is again."]) : pick(CV.SORRY)) + " " + fillT(t.say);
+    addC({ k: "them", text, es: t.es, who: my.sc.who.name, tone: my.sc.who.tone, accent: my.sc.who.accent, listen: !!my.sc.listen });
+    dockListening(my, my.sc.who.name, t.focus);
     await TTS.say(text, 0.85, voiceOf(my.sc));
     if (CONV === my && $("#dock")) dockTurn();
   }
@@ -1205,6 +1208,7 @@
     const first = my.scores.filter((x) => x === 1).length;
     const all = (ST.convs = ST.convs || {}); const cs = all[sc.id] || (all[sc.id] = { best: 0, n: 0 }); cs.n++; cs.best = Math.max(cs.best, score); cs.last = score;
     logHist("conv", score, { id: sc.id });
+    if (sc.lesson) addC({ k: "html", html: lessonHTML(sc.lesson) });
     const prev = (ST.diags || [])[0] || null;
     const d = diagnose(my);
     ST.diags = [d].concat(ST.diags || []).slice(0, 40);
@@ -1275,7 +1279,7 @@
     let li = overall < 35 ? 0 : overall < 50 ? 1 : overall < 65 ? 2 : overall < 80 ? 3 : 4;
     if (avgLen < 4) li = Math.min(li, 1); else if (avgLen < 6) li = Math.min(li, 2);
     const level = LV[li];
-    const m = { compr, wpm, pz: +pz.toFixed(1), clarity: Math.round(clarity), errRate: +errRate.toFixed(1), avgLen: +avgLen.toFixed(1), W, nFix, conns, helps: finals.filter((x) => x.help).length, retries: finals.filter((x) => x.attempt > 0).length, repairs: my.repairs || 0, skips };
+    const m = { compr, wpm, pz: +pz.toFixed(1), clarity: Math.round(clarity), errRate: +errRate.toFixed(1), avgLen: +avgLen.toFixed(1), W, nFix, conns, helps: finals.filter((x) => x.help).length, retries: finals.filter((x) => x.attempt > 0).length, repairs: my.repairs || 0, skips, reveals: my.reveals || 0 };
     // lo que salió bien
     const GOOD = { compr: "Entendiste lo que te preguntaban y respondiste a eso.", flu: "Hablaste con buen ritmo, sin cortarte.", gram: "Casi no hubo errores de gramática.", pron: "Tus palabras se entendieron con claridad.", des: "Diste respuestas completas, con detalles." };
     const strengths = DIMS.map(([k]) => k).filter((k) => dims[k] >= 72).sort((a, b) => dims[b] - dims[a]).slice(0, 2).map((k) => GOOD[k]);
@@ -1292,7 +1296,7 @@
       flu: { key: "flu", title: "Más fluidez", goal: "hablar sin cortarte, ganando tiempo con «Well…»", text: `${wpm ? `Hablaste a ${wpm} palabras por minuto` : "Hablaste poco"}${pz >= 0.8 ? ` y hiciste ${m.pz} pausas largas por respuesta` : ""}. Para no quedarte en silencio, usá frases para ganar tiempo: «Well…», «Let me think…», «That's a good question». Repetí frases en voz alta para soltar el ritmo.`, act: `<button class="btn sm" data-go="repeti">${I.repeat} Practicar en Repetí</button>` },
       gram: { key: "gram", title: "Gramática", goal: (my.fixes[0] ? `decir bien «${my.fixes[0].to}»` : "cuidar la gramática"), text: my.fixes.length ? "Estos errores aparecieron en la charla. Decí la versión correcta en voz alta tres veces." : "No apareció ningún error típico, pero el reconocedor a veces corrige solo. Para una revisión a fondo, llevá la charla a Claude.", fixes: my.fixes.slice(0, 3) },
       pron: { key: "pron", title: "Pronunciación", goal: guides[0] ? `cuidar el sonido de ${SND.GUIDES[guides[0]].title}` : "pronunciar claro cada palabra", text: lowW.length ? `Al reconocedor le costó entender: ${lowW.slice(0, 6).join(", ")}. Tocá cada palabra para ver la boca en cámara lenta${guides.length ? " y practicá el sonido que más se repite" : ""}.` : "Tus palabras se entendieron bien. Seguí cuidando los finales de palabra.", words: lowW, guides: guides.slice(0, 2) },
-      compr: { key: "compr", title: "Comprensión", goal: "entender a la primera, sin pistas", text: `${m.retries ? `En ${m.retries} ${m.retries === 1 ? "pregunta" : "preguntas"} necesitaste más de un intento` : "Respondiste casi todo a la primera"}${m.helps ? ` y usaste pistas en ${m.helps}` : ""}. Entrená el oído y probá la próxima charla con «Solo escuchar» (en Progreso). Si no entendés, pedí: «Sorry, could you say that again?».`, act: `<button class="btn sm" data-oido="mix">${I.ear} Entrenar el oído</button>` }
+      compr: { key: "compr", title: "Comprensión", goal: "entender a la primera, sin pistas", text: `${m.retries ? `En ${m.retries} ${m.retries === 1 ? "pregunta" : "preguntas"} necesitaste más de un intento` : "Respondiste casi todo a la primera"}${m.helps ? ` y usaste pistas en ${m.helps}` : ""}${m.reveals ? `; destapaste el texto ${m.reveals} ${m.reveals === 1 ? "vez" : "veces"}` : ""}. Entrená el oído y probá la próxima charla con «Solo escuchar» (en Progreso). Si no entendés, pedí: «Sorry, could you say that again?».`, act: `<button class="btn sm" data-oido="mix">${I.ear} Entrenar el oído</button>` }
     };
     let focus = DIMS.map(([k]) => k).filter((k) => dims[k] < 80).sort((a, b) => dims[a] - dims[b]).slice(0, 3).map((k) => F[k]);
     if (!focus.length) focus = [{ key: "des", title: "Subí la dificultad", goal: "probar una charla de nivel B1", text: "Esta charla te quedó cómoda. Probá una de nivel B1 o la charla libre con Claude." }];
@@ -1306,6 +1310,12 @@
       goalCheck = { text: ST.goal.text, before: fmt(before), now: fmt(now), ok: better2 };
     }
     return { at: Date.now(), id: sc.id, title: sc.title, who: sc.who.name, overall, level, dims, m, strengths, focus, better, low: lowW, goalCheck, mins: Math.max(1, Math.round((Date.now() - (my.t0 || Date.now())) / 60000)) };
+  }
+  function keyHTML(keys) {
+    return `<div class="keys"><p class="eyebrow">${I.bulb} Lo que dijo, explicado</p>${keys.map((k) => `<div class="keyrow"><button class="mini" data-say="${esc(k.en.replace(/…/g, ""))}" aria-label="Escuchar">${I.speaker}</button><span><b>${esc(k.en)}</b><span class="kes">${esc(k.es)}</span></span></div>`).join("")}</div>`;
+  }
+  function lessonHTML(L) {
+    return `<section class="card lesson"><p class="eyebrow">Lo que aprendiste</p><h3>${esc(L.title)}</h3><div class="stack" style="gap:8px">${L.points.map((k) => `<div class="keyrow"><button class="mini" data-say="${esc(k.en.replace(/…/g, ""))}" aria-label="Escuchar">${I.speaker}</button><span><b>${esc(k.en)}</b><span class="kes">${esc(k.es)}</span></span></div>`).join("")}</div>${L.tip ? `<p class="goal">${I.bulb} <span>${esc(L.tip)}</span></p>` : ""}</section>`;
   }
   function sparkSVG(vals) {
     if (vals.length < 2) return "";

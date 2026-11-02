@@ -13,7 +13,7 @@ La voz se analiza en el dispositivo. No se envía audio a ningún servidor.
 ## Novedades
 
 - **Diagnóstico de cada charla**: comprensión, fluidez, gramática, pronunciación y respuestas completas, comparado con la charla anterior, con un objetivo concreto para la próxima y tus respuestas mejoradas para practicar.
-- **55 situaciones** en cinco grupos: trabajo, viajes, ciudad y servicios, vida social e imprevistos. Los personajes cambian cómo preguntan entre una pasada y otra.
+- **66 situaciones** en seis grupos: escucha activa (texto oculto, datos para captar, expresiones explicadas y mini clase al final), trabajo, viajes, ciudad y servicios, vida social e imprevistos. Los personajes cambian cómo preguntan entre una pasada y otra.
 - **Entrená el oído**: escuchás una palabra y elegís cuál fue, para distinguir sonidos como ship y sheep antes de producirlos.
 - **Trucos para cada sonido** y práctica en orden: oído, pares, palabras sueltas y frases.
 - **Palabras difíciles**: 287 palabras que más se pronuncian mal, en ocho grupos, con cómo suenan y evaluación con el micrófono.

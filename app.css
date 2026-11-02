@@ -348,3 +348,13 @@ h3 .tiny{font-family:var(--body);font-weight:700;margin-left:4px}
 @media (prefers-reduced-motion:reduce){.earbtn{transition:none}}
 .earcard>.row>div,.diaghome>.row>div{flex:1 1 0;min-width:0}
 .tricks h3{display:flex;gap:8px;align-items:center}.tricks h3 svg,.goal svg{width:20px;height:20px;flex:none;color:var(--accent)}
+/* ---------- escucha activa ---------- */
+.listenfor{display:flex;gap:8px;align-items:flex-start;font-size:14px;background:var(--accent-bg);border-radius:12px;padding:8px 10px}
+.listenfor svg{width:18px;height:18px;flex:none;color:var(--accent);margin-top:1px}
+.keys{align-self:stretch;margin:2px 0 4px 40px;background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.keys .eyebrow{display:flex;gap:6px;align-items:center}.keys .eyebrow svg{width:14px;height:14px}
+.keyrow{display:flex;gap:8px;align-items:flex-start}
+.keyrow>span{display:flex;flex-direction:column;min-width:0}
+.keyrow b{font-family:var(--display)}
+.kes{font-size:14px;color:var(--muted)}
+.lesson{gap:10px}
