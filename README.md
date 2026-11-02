@@ -16,7 +16,7 @@ La voz se analiza en el dispositivo. No se envía audio a ningún servidor.
 - **55 situaciones** en cinco grupos: trabajo, viajes, ciudad y servicios, vida social e imprevistos. Los personajes cambian cómo preguntan entre una pasada y otra.
 - **Entrená el oído**: escuchás una palabra y elegís cuál fue, para distinguir sonidos como ship y sheep antes de producirlos.
 - **Trucos para cada sonido** y práctica en orden: oído, pares, palabras sueltas y frases.
-- **Palabras difíciles**: las que más se pronuncian mal, con cómo suenan y evaluación con el micrófono.
+- **Palabras difíciles**: 287 palabras que más se pronuncian mal, en ocho grupos, con cómo suenan y evaluación con el micrófono.
 
 ## Créditos
 
