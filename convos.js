@@ -3,6 +3,7 @@
   "use strict";
   const NUM = "(?:\\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty|forty|fifty|a hundred|hundred)";
   const R = (s) => new RegExp(s.replace(/NUM/g, NUM), "i");
+  const K = (s) => R("\\b(" + s + ")\\b");
   const SCENES = [
     {
       id: "meet", title: "Presentarte", sub: "Un evento de comunicación en Londres", level: "A2",
@@ -305,6 +306,462 @@
         series: { say: "Me neither. Hey, are you watching any good series right now?", es: "Yo tampoco. Che, ¿estás viendo alguna serie buena ahora?", you: "Contá qué serie ves y por qué te gusta.", hint: ["Yes, I'm watching …", "I just finished …"], model: ["Yes, I'm watching The Bear. It's really good.", "I just finished a great series about politics."], open: 1, next: "plans" },
         plans: { say: "I'll check it out. How long are you staying in town?", es: "La voy a ver. ¿Cuánto tiempo te quedás en la ciudad?", you: "Respondé.", hint: ["Until Sunday.", "For one week."], model: ["Until Sunday. I go back on Monday.", "For one more week."], expect: [R("\\b(until|for|week|weeks|days|day|sunday|monday|tuesday|wednesday|thursday|friday|saturday|month|NUM)\\b")], next: "end" },
         end: { say: "Awesome. If you want, we can watch the next game together!", es: "¡Genial! Si querés, vemos el próximo partido juntos.", end: true }
+      }
+    },
+    {
+      id: "jobint", cat: "Trabajo", title: "Entrevista laboral", sub: "Una empresa internacional te entrevista", level: "B1",
+      who: { name: "Ms. Lee", role: "gerente de recursos humanos", tone: "f", accent: "US" },
+      intro: "Videollamada con una empresa internacional que busca un especialista en comunicación digital.",
+      start: "start",
+      turns: {
+        start: { say: ["Thanks for joining us. Can you tell me a little about yourself?", "Hi, nice to meet you. So, tell me about yourself."], es: "Gracias por sumarte. ¿Me contás un poco sobre vos?", you: "Presentate: quién sos, qué hacés y hace cuánto.", hint: ["I'm a digital communications specialist…", "I've been working in … for … years."], model: ["I'm a digital communications specialist from Buenos Aires. I've been working in social media for ten years.", "I'm a lawyer, but I work in communications. I lead social media teams."], expect: [K("i'?m|i am|i work|i'?ve been|working|specialist|communications|lawyer|years|from")], next: "why" },
+        why: { say: "That's great. Why are you interested in this position?", es: "Muy bien. ¿Por qué te interesa este puesto?", you: "Dá dos razones. Usá «because».", hint: ["Because I want to …", "I'm interested because …"], model: ["Because I want to work on international campaigns and learn from a global team.", "I'm interested because your company works with digital strategy, and that's my passion."], expect: [K("because|want|interested|love|like|learn|grow|opportunity|experience|international|passion")], next: "strength" },
+        strength: { say: "What would you say is your biggest strength?", es: "¿Cuál dirías que es tu mayor fortaleza?", you: "Nombrá una fortaleza y dá un ejemplo.", hint: ["I'm good at …", "My biggest strength is …"], model: ["My biggest strength is strategy. For example, I plan campaigns from start to finish.", "I'm very good at leading teams under pressure."], expect: [K("good at|strength|i'?m|i am|i can|able|example|lead|leading|strategy|creative|organized|team")], next: "weak" },
+        weak: { say: "And what's something you're still working on?", es: "¿Y algo que todavía estés mejorando?", you: "Contá una debilidad y qué hacés para mejorarla.", hint: ["My English, but I practice every day.", "Sometimes I … , so now I …"], model: ["My English. That's why I practice every day with an app.", "Sometimes I take on too much work, so now I delegate more."], open: 3, next: "past" },
+        past: { say: "Tell me about a difficult situation at work and how you solved it.", es: "Contame una situación difícil en el trabajo y cómo la resolviste.", you: "Contala en pasado: qué pasó, qué hiciste, cómo terminó.", hint: ["Once, we had a problem with …", "I talked to … and we decided …"], model: ["Once, a post went viral for the wrong reasons. We answered quickly and explained the facts.", "Last year we had a very short deadline, so I organized the team in two shifts."], expect: [K("once|last|we had|there was|happened|i decided|we decided|solved|talked|organized|answered|was|were|did")], next: "q" },
+        q: { say: "Great answers. Do you have any questions for us?", es: "Muy buenas respuestas. ¿Tenés alguna pregunta para nosotros?", you: "Hacé una pregunta sobre el puesto o el equipo.", hint: ["What does a typical day look like?", "How big is the team?"], model: ["What does a typical day look like in this role?", "How big is the team, and who would I work with?"], expect: [K("what|how|who|when|where|is there|are there|can i|do you|could you")], next: "end" },
+        end: { say: "Good question. We'll be in touch next week. Thanks again for your time!", es: "Buena pregunta. Te contactamos la semana que viene. ¡Gracias por tu tiempo!", end: true }
+      }
+    },
+    {
+      id: "firstday", cat: "Trabajo", title: "Primer día", sub: "Conocé a tu nuevo equipo", level: "A2",
+      who: { name: "Ben", role: "líder de equipo en Londres", tone: "m", accent: "UK" },
+      intro: "Primer día en una oficina de Londres. Ben te da la bienvenida.",
+      start: "start",
+      turns: {
+        start: { say: ["Welcome to the team! How was your trip to the office?", "Hi, welcome! Did you find the office okay?"], es: "¡Bienvenido al equipo! ¿Cómo llegaste a la oficina?", you: "Contá cómo llegaste.", hint: ["It was easy, I took the tube.", "I got a bit lost, but …"], model: ["It was easy. I took the tube.", "I got a bit lost, but a nice woman helped me."], open: 2, next: "before" },
+        before: { say: "Good to hear. So, what were you doing before you joined us?", es: "Qué bueno. ¿Y qué hacías antes de sumarte?", you: "Contá tu trabajo anterior en pasado.", hint: ["I worked as …", "I was a … at …"], model: ["I worked as a social media manager in Buenos Aires.", "I was a communications advisor for the government."], expect: [K("worked|was|i used to|i managed|i led|before|job|company|government|agency")], next: "coffee" },
+        coffee: { say: "Interesting! Let me show you around. Do you drink coffee or tea?", es: "¡Interesante! Te muestro la oficina. ¿Tomás café o té?", you: "Respondé y decí cómo lo tomás.", hint: ["Coffee, black please.", "Tea with milk, thanks."], model: ["Coffee, please. Black, no sugar.", "I usually drink mate, but tea is fine."], expect: [K("coffee|tea|mate|water|black|milk|sugar|both|neither|nothing")], next: "team" },
+        team: { say: "This is where the team sits. Is there anything you'd like to know about how we work?", es: "Acá se sienta el equipo. ¿Querés saber algo de cómo trabajamos?", you: "Preguntá algo (horarios, reuniones, herramientas).", hint: ["What time do you usually start?", "Do you work from home on Fridays?"], model: ["What time do you usually start in the morning?", "Do people work from home some days?"], expect: [K("what|how|when|do you|do people|is there|are there|can i|which")], next: "lunch" },
+        lunch: { say: "Good question: we start at nine, and Fridays are from home. Would you like to join us for lunch today?", es: "Buena pregunta: empezamos a las nueve y los viernes son desde casa. ¿Querés almorzar con nosotros hoy?", you: "Aceptá con ganas.", hint: ["I'd love to!", "Sure, thanks for inviting me."], model: ["I'd love to. Thanks for inviting me!", "Sure! Where do you usually go?"], open: 1, next: "end" },
+        end: { say: "Brilliant. We usually go at one. See you then!", es: "Genial. Solemos ir a la una. ¡Nos vemos!", end: true }
+      }
+    },
+    {
+      id: "brainstorm", cat: "Trabajo", title: "Lluvia de ideas", sub: "Pensá una campaña con el equipo", level: "B1",
+      who: { name: "Priya", role: "gerente de redes sociales", tone: "f", accent: "UK" },
+      intro: "Reunión creativa: hay que pensar una campaña para que más jóvenes usen el transporte público.",
+      start: "start",
+      turns: {
+        start: { say: "Okay, we need ideas to get young people to use public transport. Any thoughts?", es: "Bueno, necesitamos ideas para que los jóvenes usen el transporte público. ¿Alguna idea?", you: "Proponé una idea con «What if we…?» o «We could…».", hint: ["What if we …?", "We could make …"], model: ["What if we make short videos with real students on the bus?", "We could create a challenge on TikTok."], expect: [K("what if|we could|maybe|how about|let'?s|i think|idea|video|videos|challenge|influencer|influencers|app|game|discount")], next: "why" },
+        why: { say: ["I like that. Why do you think it would work?", "Interesting. What makes you think it would work?"], es: "Me gusta. ¿Por qué creés que funcionaría?", you: "Justificá con «because».", hint: ["Because young people …", "It would work because …"], model: ["Because young people trust people like them more than ads.", "It would work because it's fun and easy to share."], expect: [K("because|since|so|young|people|they|share|trust|fun|easy|real")], next: "platform" },
+        platform: { say: "Which platform should we use first?", es: "¿Qué plataforma usamos primero?", you: "Elegí una plataforma y explicá.", hint: ["TikTok, because …", "I'd start with Instagram."], model: ["I'd start with TikTok, because that's where students are.", "Instagram Reels, and then YouTube Shorts."], expect: [K("tiktok|instagram|youtube|x|twitter|facebook|whatsapp|twitch|reels|shorts|first|start")], next: "measure" },
+        measure: { say: "And how would we measure if it's working?", es: "¿Y cómo mediríamos si funciona?", you: "Proponé una métrica.", hint: ["We could track …", "By measuring …"], model: ["We could track views, shares and how many people use the student card.", "By measuring engagement and new users of the app."], expect: [K("track|measure|measuring|views|shares|engagement|users|numbers|data|survey|clicks|downloads|reach")], next: "next" },
+        next: { say: "Perfect. Can you put this in a short proposal for Thursday?", es: "Perfecto. ¿Lo podés armar en una propuesta corta para el jueves?", you: "Confirmá.", hint: ["Sure, I'll have it ready.", "No problem."], model: ["Sure. I'll send it on Wednesday night.", "No problem, I'll have it ready by Thursday."], open: 1, next: "end" },
+        end: { say: "Great teamwork, everyone. Thanks!", es: "Gran trabajo en equipo. ¡Gracias!", end: true }
+      }
+    },
+    {
+      id: "extension", cat: "Trabajo", title: "Pedir más tiempo", sub: "Tu jefe pregunta por un informe atrasado", level: "B1",
+      who: { name: "David", role: "tu jefe", tone: "m", accent: "US" },
+      intro: "Tu jefe te frena en el pasillo para preguntarte por un informe que tenía que estar hoy.",
+      start: "start",
+      turns: {
+        start: { say: "Hey, how's the report going? I was expecting it today.", es: "Che, ¿cómo va el informe? Lo esperaba para hoy.", you: "Explicá que todavía no está.", hint: ["I'm sorry, it's not ready yet.", "I'm almost done, but …"], model: ["I'm sorry, it's not ready yet. I'm almost done.", "I'm working on it, but I need a little more time."], expect: [K("sorry|not ready|not finished|almost|working on|need|more time|yet|still")], next: "why" },
+        why: { say: "What happened?", es: "¿Qué pasó?", you: "Dá el motivo en pasado.", hint: ["The data arrived late.", "I had to …"], model: ["The data from the other team arrived late.", "I had to finish an urgent campaign first."], expect: [K("arrived|late|had to|was|were|didn'?t|couldn'?t|because|urgent|problem|sick|waiting")], next: "when" },
+        when: { say: "Okay. When can you have it ready?", es: "Bien. ¿Para cuándo lo podés tener?", you: "Proponé un plazo concreto.", hint: ["By tomorrow at noon.", "On Friday morning."], model: ["I can have it ready by tomorrow at noon.", "By Friday morning at the latest."], expect: [K("tomorrow|today|tonight|monday|tuesday|wednesday|thursday|friday|morning|afternoon|noon|by|end of|hours|NUM")], next: "help" },
+        help: { say: "Fine. Is there anything you need from me to finish it?", es: "Bien. ¿Necesitás algo de mi parte para terminarlo?", you: "Pedí algo concreto o decí que no.", hint: ["Could you send me …?", "No, I have everything, thanks."], model: ["Could you ask the data team to send me the last numbers?", "No, I have everything. Thanks for understanding."], open: 2, next: "end" },
+        end: { say: "Sounds good. Just keep me posted, okay?", es: "Bárbaro. Mantenéme al tanto, ¿sí?", end: true }
+      }
+    },
+    {
+      id: "feedback", cat: "Trabajo", title: "Dar feedback", sub: "Comentale un diseño a una diseñadora", level: "B1",
+      who: { name: "Zoe", role: "diseñadora gráfica", tone: "f", accent: "UK" },
+      intro: "Zoe te muestra la pieza para una campaña. Tenés que darle tu opinión sin desanimarla.",
+      start: "start",
+      turns: {
+        start: { say: "So, what do you think of the new design?", es: "¿Y? ¿Qué te parece el diseño nuevo?", you: "Empezá por algo positivo.", hint: ["I really like the …", "It looks great, especially …"], model: ["I really like it. The colors are very strong.", "It looks great, especially the photo."], expect: [K("like|love|great|good|nice|beautiful|strong|clean|works|especially|colors|photo")], next: "change" },
+        change: { say: "Thanks! Is there anything you'd change?", es: "¡Gracias! ¿Cambiarías algo?", you: "Pedí un cambio con suavidad: «Maybe we could…».", hint: ["Maybe we could make the text bigger.", "I'd change …"], model: ["Maybe we could make the text a bit bigger. It's hard to read on a phone.", "I'd change the logo position. It's too small."], expect: [K("maybe|could|would|change|bigger|smaller|text|logo|color|colors|font|move|instead|less|more")], next: "why" },
+        why: { say: "Hmm, okay. Why do you think that's important?", es: "Mmm, bueno. ¿Por qué te parece importante?", you: "Explicá pensando en el público.", hint: ["Because most people see it on their phones.", "Because the message must be clear."], model: ["Because most people will see it on their phones.", "Because the main message has to be clear in two seconds."], expect: [K("because|people|phone|phones|mobile|clear|read|message|audience|seconds|quick")], next: "when" },
+        when: { say: "That makes sense. When do you need the new version?", es: "Tiene sentido. ¿Para cuándo necesitás la versión nueva?", you: "Decí el plazo.", hint: ["By Wednesday, if possible.", "Tomorrow afternoon would be great."], model: ["By Wednesday, if possible.", "Tomorrow afternoon would be perfect."], expect: [K("tomorrow|today|monday|tuesday|wednesday|thursday|friday|morning|afternoon|by|possible|end of")], next: "end" },
+        end: { say: "Perfect, I'll send it then. Thanks for the feedback!", es: "Perfecto, te lo mando para entonces. ¡Gracias por el feedback!", end: true }
+      }
+    },
+    {
+      id: "crisis", cat: "Trabajo", title: "Crisis en redes", sub: "Un posteo se volvió viral por mal", level: "B1",
+      who: { name: "Nina", role: "directora de prensa", tone: "f", accent: "US" },
+      intro: "Un posteo de la cuenta oficial se está viralizando con críticas. Nina te llama de urgencia.",
+      start: "start",
+      turns: {
+        start: { say: "Have you seen the comments on this morning's post? What happened?", es: "¿Viste los comentarios del posteo de esta mañana? ¿Qué pasó?", you: "Explicá qué pasó en pasado.", hint: ["Yes, we published a wrong number.", "People misunderstood the message."], model: ["Yes. We published a wrong number in the graphic.", "People misunderstood the message and it went viral."], expect: [K("yes|we|published|posted|wrong|mistake|error|misunderstood|went viral|people|comments")], next: "first" },
+        first: { say: "Okay. What should we do first?", es: "Bien. ¿Qué hacemos primero?", you: "Proponé el primer paso con «I think we should…».", hint: ["I think we should delete it and …", "We should post a correction."], model: ["I think we should post a correction right now and explain the mistake.", "We should fix the graphic and answer the main comments."], expect: [K("should|need to|have to|let'?s|first|correction|delete|fix|explain|answer|apologize|statement")], next: "message" },
+        message: { say: "Good. What would the message say, more or less?", es: "Bien. ¿Qué diría el mensaje, más o menos?", you: "Dictá el mensaje corto.", hint: ["We made a mistake in the …", "The correct number is …"], model: ["We made a mistake in this morning's graphic. The correct number is five thousand.", "Thanks for pointing it out. Here is the correct information."], open: 4, next: "approve" },
+        approve: { say: "Clear and short, I like it. Who needs to approve it before we post?", es: "Claro y corto, me gusta. ¿Quién lo tiene que aprobar antes de publicar?", you: "Decí quién aprueba y en cuánto tiempo.", hint: ["The minister's office, in ten minutes.", "Our director has to approve it."], model: ["The director has to approve it. I'll send it to her now.", "The minister's office. I'll call them right away."], open: 3, next: "after" },
+        after: { say: "Great. And what do we learn from this for next time?", es: "Genial. ¿Y qué aprendemos para la próxima?", you: "Proponé un cambio en el proceso.", hint: ["We need a second check before posting.", "Next time, two people should review the numbers."], model: ["Next time, two people should check the numbers before we post.", "We need a checklist for every graphic."], expect: [K("next time|should|need|check|review|two people|double|before|checklist|process")], next: "end" },
+        end: { say: "Agreed. Let's get it done. Good job keeping calm.", es: "De acuerdo. Manos a la obra. Bien por mantener la calma.", end: true }
+      }
+    },
+    {
+      id: "networking", cat: "Trabajo", title: "Networking", sub: "Presentá lo que hacés en un minuto", level: "B1",
+      who: { name: "Paul", role: "consultor en un congreso", tone: "m", accent: "UK" },
+      intro: "En el café de un congreso, Paul se acerca a charlar.",
+      start: "start",
+      turns: {
+        start: { say: ["Hi there, I'm Paul. What brings you to the conference?", "Hello! First time at this conference?"], es: "Hola, soy Paul. ¿Qué te trae al congreso?", you: "Presentate y decí por qué viniste.", hint: ["I'm Maxi. I came to learn about …", "I work in …, so …"], model: ["I'm Maxi. I came to learn about new trends in digital communication.", "I work in government communications, so this is very useful for me."], expect: [K("i'?m|i am|my name|came|here to|learn|work|interested|first time")], next: "pitch" },
+        pitch: { say: "Nice. And what exactly do you do?", es: "Bien. ¿Y qué hacés exactamente?", you: "Explicá tu trabajo en dos frases.", hint: ["I lead a team that …", "I help … to …"], model: ["I lead a team that plans and creates content for social media.", "I help public institutions explain their work in a simple way."], expect: [K("i lead|i help|i manage|i work|i create|i plan|we|team|content|campaigns|social|strategy")], next: "project" },
+        project: { say: "That sounds interesting. What's a project you're proud of?", es: "Suena interesante. ¿De qué proyecto estás orgulloso?", you: "Contá un proyecto con un resultado.", hint: ["Last year we …", "A campaign about … that reached …"], model: ["Last year we launched a campaign that reached ten million people.", "A video series that explained new rules in one minute."], open: 4, next: "contact" },
+        contact: { say: "Impressive. We should stay in touch. Do you have a card, or are you on LinkedIn?", es: "Impresionante. Sigamos en contacto. ¿Tenés tarjeta o estás en LinkedIn?", you: "Ofrecé tu contacto.", hint: ["Sure, here's my card.", "Yes, let me find you on LinkedIn."], model: ["Sure, here's my card. You can also find me on LinkedIn.", "Yes, let me scan your QR code."], expect: [K("sure|yes|card|linkedin|email|phone|number|scan|connect|find you")], next: "end" },
+        end: { say: "Great. Enjoy the rest of the conference!", es: "Genial. ¡Que disfrutes el resto del congreso!", end: true }
+      }
+    },
+    {
+      id: "qna", cat: "Trabajo", title: "Preguntar en una charla", sub: "Levantá la mano al final de una conferencia", level: "B1",
+      who: { name: "Dr. Kim", role: "oradora de un congreso", tone: "f", accent: "US" },
+      intro: "Terminó una charla sobre inteligencia artificial en comunicación. Te dan el micrófono.",
+      start: "start",
+      turns: {
+        start: { say: "Thank you all. We have time for one more question. Yes, you in the middle.", es: "Gracias a todos. Hay tiempo para una pregunta más. Sí, vos, en el medio.", you: "Agradecé la charla y hacé tu pregunta.", hint: ["Thank you for the talk. My question is …", "How do you …?"], model: ["Thank you for the great talk. My question is: how can small teams start using AI?", "Thanks. Do you think AI will replace community managers?"], expect: [K("thank|thanks|question|how|what|do you|can|why|which|would")], next: "follow" },
+        follow: { say: "Great question. I'd say start small, with one simple task. Does that answer your question?", es: "Buena pregunta. Yo diría: empezá de a poco, con una tarea simple. ¿Responde tu pregunta?", you: "Pedí un ejemplo concreto.", hint: ["Yes, could you give an example?", "Kind of. What task would you start with?"], model: ["Yes, thanks. Could you give us an example of a simple task?", "Kind of. Which task would you start with?"], expect: [K("example|which|what|could you|can you|yes|kind of|for instance|task")], next: "clarify" },
+        clarify: { say: "Sure. For example, writing the first draft of your weekly report. Does that help?", es: "Claro. Por ejemplo, escribir el primer borrador del informe semanal. ¿Te sirve?", you: "Agradecé y cerrá.", hint: ["Yes, that's very helpful. Thank you.", "Perfect, thanks a lot."], model: ["Yes, that's very helpful. Thank you so much.", "Perfect. Thanks a lot."], open: 1, next: "end" },
+        end: { say: "My pleasure. Thanks, everyone!", es: "Un placer. ¡Gracias a todos!", end: true }
+      }
+    },
+    {
+      id: "client", cat: "Trabajo", title: "Cliente enojado", sub: "Los números bajaron y quiere explicaciones", level: "B1",
+      who: { name: "Mr. Grant", role: "cliente de tu agencia", tone: "m", accent: "US" },
+      intro: "Un cliente llama molesto: los resultados del mes bajaron.",
+      start: "start",
+      turns: {
+        start: { say: "I just saw the monthly report. Our engagement went down twenty percent. What's going on?", es: "Acabo de ver el informe mensual. La interacción bajó un veinte por ciento. ¿Qué está pasando?", you: "Mostrá que entendés su preocupación.", hint: ["I understand your concern.", "You're right, the numbers went down."], model: ["I understand your concern, and you're right, the numbers went down.", "Thanks for calling. Let me explain what happened."], expect: [K("understand|right|sorry|concern|let me|explain|thanks|numbers|went down|i know")], next: "why" },
+        why: { say: "So, why did it happen?", es: "¿Y por qué pasó?", you: "Explicá la causa.", hint: ["The platform changed its algorithm.", "We posted less because …"], model: ["The platform changed its algorithm, and that affected everyone.", "We posted less video this month, and video gets more engagement."], expect: [K("because|algorithm|changed|posted|less|fewer|platform|video|budget|holiday|season")], next: "plan" },
+        plan: { say: "Okay. What's your plan to fix it?", es: "Bien. ¿Cuál es el plan para arreglarlo?", you: "Contá el plan con «We're going to…».", hint: ["We're going to post more videos.", "We will test new formats."], model: ["We're going to post three videos a week and test new formats.", "We will increase the budget for the best posts."], expect: [K("going to|will|'ll|plan|more|test|increase|post|videos|formats|budget|change")], next: "when" },
+        when: { say: "And when will I see results?", es: "¿Y cuándo voy a ver resultados?", you: "Dá un plazo realista.", hint: ["In about two weeks.", "By the end of the month."], model: ["You should see results in about two weeks.", "By the end of the month. I'll send you a weekly update."], expect: [K("week|weeks|month|days|end of|soon|update|by|NUM")], next: "end" },
+        end: { say: "Alright. I appreciate the honesty. Keep me updated.", es: "Bueno. Valoro la sinceridad. Mantenéme al tanto.", end: true }
+      }
+    },
+    {
+      id: "late", cat: "Trabajo", title: "Llegar tarde", sub: "Disculpate y ponete al día en una reunión", level: "A2+",
+      who: { name: "Anna", role: "gerente de proyecto", tone: "f", accent: "UK" },
+      intro: "Entrás quince minutos tarde a una reunión que ya empezó.",
+      start: "start",
+      turns: {
+        start: { say: "Oh, there you are! We started a few minutes ago.", es: "¡Ah, ahí estás! Empezamos hace unos minutos.", you: "Disculpate y explicá por qué.", hint: ["Sorry I'm late. The traffic was terrible.", "I'm so sorry, my train was delayed."], model: ["Sorry I'm late. The traffic was terrible.", "I'm so sorry. My previous meeting ran late."], expect: [K("sorry|apologize|late|traffic|train|bus|meeting|delayed|ran late")], next: "missed" },
+        missed: { say: "No worries. Do you want me to tell you what you missed?", es: "No pasa nada. ¿Querés que te cuente lo que te perdiste?", you: "Pedí un resumen corto.", hint: ["Yes, please, just the main points.", "Could you give me a quick summary?"], model: ["Yes, please. Just the main points.", "Could you give me a quick summary?"], expect: [K("yes|please|summary|main points|quick|could you|what did i miss|sure")], next: "opinion" },
+        opinion: { say: "We decided to launch the campaign in March, not February. What do you think?", es: "Decidimos lanzar la campaña en marzo, no en febrero. ¿Qué pensás?", you: "Dá tu opinión.", hint: ["I agree, because …", "I'm not sure. February is …"], model: ["I agree. March gives us more time to prepare.", "I'm not sure. In February many people are on holiday, so March is better."], open: 3, next: "task" },
+        task: { say: "Good point. Can you take care of the social media calendar?", es: "Buen punto. ¿Te podés encargar del calendario de redes?", you: "Aceptá y decí cuándo lo tenés.", hint: ["Sure, I'll have it by Monday.", "Of course."], model: ["Sure. I'll have the first version by Monday.", "Of course. I'll share it with everyone."], open: 1, next: "end" },
+        end: { say: "Perfect. Let's move on to the next point.", es: "Perfecto. Pasemos al siguiente tema.", end: true }
+      }
+    },
+    {
+      id: "carrental", cat: "Viajes", title: "Alquilar un auto", sub: "Seguro, combustible y devolución", level: "A2+",
+      who: { name: "Steve", role: "empleado de una rentadora en Miami", tone: "m", accent: "US" },
+      intro: "Llegás al mostrador de la rentadora de autos en el aeropuerto de Miami.",
+      start: "start",
+      turns: {
+        start: { say: ["Hi, welcome. Do you have a reservation?", "Good morning! Picking up a car today?"], es: "Hola, bienvenido. ¿Tenés reserva?", you: "Decí que sí y a nombre de quién.", hint: ["Yes, under the name Defranchi.", "Yes, I booked online."], model: ["Yes, I have a reservation under Defranchi.", "Yes, I booked a small car online."], expect: [K("yes|reservation|booked|under|name|online|no")], next: "license" },
+        license: { say: "Great. Can I see your driver's license and a credit card?", es: "Bien. ¿Me mostrás tu licencia de conducir y una tarjeta de crédito?", you: "Entregalos y preguntá si sirve la licencia argentina.", hint: ["Here you are. Is my Argentine license okay?", "Sure, here they are."], model: ["Here you are. Is an Argentine license okay?", "Sure. I also have an international license."], open: 2, next: "insurance" },
+        insurance: { say: "That's fine. Would you like full insurance? It's twenty dollars a day.", es: "Está bien. ¿Querés el seguro completo? Son veinte dólares por día.", you: "Decidí y preguntá qué cubre.", hint: ["What does it cover?", "Yes, please. Full insurance."], model: ["What does it cover exactly?", "Yes, please. I'd like full insurance."], expect: [K("yes|no|what does|cover|covers|full|basic|insurance|please|thanks")], next: "fuel" },
+        fuel: { say: "It covers everything. The car comes with a full tank, and you return it full. Okay?", es: "Cubre todo. El auto sale con el tanque lleno y lo devolvés lleno. ¿De acuerdo?", you: "Confirmá y preguntá a qué hora lo devolvés.", hint: ["Okay. What time do I have to return it?", "Got it."], model: ["Okay. What time do I have to bring it back?", "Got it. Where is the nearest gas station?"], open: 1, next: "return" },
+        return: { say: "Any time before noon on Sunday. Will anyone else be driving?", es: "Cuando quieras antes del mediodía del domingo. ¿Va a manejar alguien más?", you: "Respondé.", hint: ["No, just me.", "Yes, my friend too."], model: ["No, just me.", "Yes, my friend will drive too. Is that extra?"], expect: [K("no|yes|just me|only me|friend|wife|husband|partner|brother|extra")], next: "end" },
+        end: { say: "All set. Your car is in spot twelve. Drive safe!", es: "Listo. Tu auto está en el lugar doce. ¡Manejá con cuidado!", end: true }
+      }
+    },
+    {
+      id: "lostbag", cat: "Viajes", title: "Valija perdida", sub: "Tu equipaje no llegó", level: "B1",
+      who: { name: "Joan", role: "empleada de equipajes en Londres", tone: "f", accent: "UK" },
+      intro: "Esperaste en la cinta y tu valija nunca salió. Vas a la oficina de equipajes.",
+      start: "start",
+      turns: {
+        start: { say: "Hello, how can I help?", es: "Hola, ¿en qué te ayudo?", you: "Explicá que tu valija no llegó.", hint: ["My suitcase didn't arrive.", "I can't find my luggage."], model: ["Hi. My suitcase didn't arrive on the flight from Madrid.", "I waited, but my luggage never came out."], expect: [K("suitcase|luggage|bag|didn'?t arrive|never came|lost|can'?t find|missing")], next: "flight" },
+        flight: { say: "I'm sorry. What was your flight number?", es: "Lo siento. ¿Cuál era tu número de vuelo?", you: "Decí el número de vuelo.", hint: ["IB six one six.", "It's BA two four seven."], model: ["It was IB six one six, from Madrid.", "BA two four seven."], open: 1, next: "describe" },
+        describe: { say: "Thank you. Can you describe the suitcase?", es: "Gracias. ¿Me describís la valija?", you: "Describila: tamaño, color, detalles.", hint: ["It's a big black suitcase with …", "It's medium, blue, with a red ribbon."], model: ["It's a big black suitcase with four wheels and a red ribbon.", "It's a medium blue bag with my name on a tag."], expect: [K("big|small|medium|large|black|blue|red|grey|gray|green|white|brown|wheels|ribbon|tag|hard|soft")], next: "inside" },
+        inside: { say: "And is there anything valuable or urgent inside?", es: "¿Y hay algo de valor o urgente adentro?", you: "Decí qué necesitás con urgencia.", hint: ["My medicine and a suit for a meeting.", "Just clothes."], model: ["Yes, my medicine and a suit for a meeting tomorrow.", "No, just clothes and shoes."], open: 2, next: "address" },
+        address: { say: "Okay. Where should we deliver it when we find it?", es: "Bien. ¿A dónde te la enviamos cuando aparezca?", you: "Dá la dirección del hotel.", hint: ["To the Hilton hotel in Kensington.", "To this address: …"], model: ["To the Hilton hotel in Kensington, please.", "To my hotel. Here's the address."], expect: [K("hotel|address|street|road|to the|here'?s|deliver|room")], next: "end" },
+        end: { say: "Done. Here's your reference number. We'll text you with any news.", es: "Listo. Este es tu número de reclamo. Te avisamos por mensaje.", end: true }
+      }
+    },
+    {
+      id: "train", cat: "Viajes", title: "Pasaje de tren", sub: "Ida y vuelta, horario y andén", level: "A2",
+      who: { name: "Oliver", role: "boletero en una estación de Londres", tone: "m", accent: "UK" },
+      intro: "Querés ir de Londres a Oxford en tren. Hacés la fila en la ventanilla.",
+      start: "start",
+      turns: {
+        start: { say: ["Hello, where would you like to go?", "Morning. Where are you travelling to?"], es: "Hola, ¿a dónde querés ir?", you: "Decí a dónde vas.", hint: ["To Oxford, please.", "A ticket to Oxford."], model: ["One ticket to Oxford, please.", "To Oxford, please."], expect: [K("oxford|to|ticket|cambridge|bath|brighton|please")], next: "type" },
+        type: { say: "Single or return?", es: "¿Solo ida o ida y vuelta?", you: "Elegí.", hint: ["Return, please.", "Just single."], model: ["Return, please. I'm coming back tonight.", "Single, please."], expect: [K("single|return|one way|round trip|back|both")], next: "time" },
+        time: { say: "There's a train at ten fifteen and another at ten forty-five. Which one?", es: "Hay un tren a las 10:15 y otro a las 10:45. ¿Cuál?", you: "Elegí el horario.", hint: ["The ten fifteen, please.", "The later one."], model: ["The ten fifteen, please.", "The later one, at ten forty-five."], expect: [K("ten|fifteen|forty|later|earlier|first|second|one|10")], next: "card" },
+        card: { say: "That's thirty-two pounds. Do you have a railcard?", es: "Son 32 libras. ¿Tenés tarjeta de descuento?", you: "Respondé y pagá.", hint: ["No, I don't. Can I pay by card?", "No. Here you are."], model: ["No, I don't. Can I pay by card?", "No, I'm a tourist. Here you are."], expect: [K("no|yes|don'?t|card|cash|pay|here|tourist")], next: "platform" },
+        platform: { say: "Here's your ticket. It leaves from platform nine.", es: "Acá está tu pasaje. Sale del andén nueve.", you: "Confirmá el andén para estar seguro.", hint: ["Platform nine?", "Sorry, which platform?"], model: ["Platform nine? Thank you.", "Sorry, did you say platform five or nine?"], open: 1, next: "end" },
+        end: { say: "Nine, that's right. Have a good trip!", es: "Nueve, así es. ¡Buen viaje!", end: true }
+      }
+    },
+    {
+      id: "tour", cat: "Viajes", title: "Visita guiada", sub: "Charlá con el guía de un tour", level: "A2",
+      who: { name: "Sam", role: "guía turístico en Nueva York", tone: "m", accent: "US" },
+      intro: "Estás en un tour a pie por Nueva York. Sam, el guía, charla con el grupo.",
+      start: "start",
+      turns: {
+        start: { say: "Welcome, everybody! Where are you all from? What about you?", es: "¡Bienvenidos! ¿De dónde son? ¿Y vos?", you: "Decí de dónde sos.", hint: ["I'm from Argentina.", "From Buenos Aires."], model: ["I'm from Buenos Aires, Argentina.", "From Argentina. It's my first time here."], expect: [K("from|argentina|buenos aires|i'?m|south america")], next: "before" },
+        before: { say: ["Argentina, awesome! Have you been to New York before?", "Cool! Is this your first time in the city?"], es: "¡Argentina, genial! ¿Ya habías estado en Nueva York?", you: "Respondé con «I have / I haven't».", hint: ["No, I haven't. It's my first time.", "Yes, I came in 2019."], model: ["No, I haven't. It's my first time.", "Yes, I came here in 2019 for work."], expect: [K("yes|no|haven'?t|have|first time|came|was here|before")], next: "question" },
+        question: { say: "This is Grand Central. Any questions so far?", es: "Esto es Grand Central. ¿Alguna pregunta hasta ahora?", you: "Hacé una pregunta sobre el lugar.", hint: ["How old is this building?", "Can we go inside?"], model: ["How old is this building?", "Can we go inside and take pictures?"], expect: [K("how|what|when|who|why|can we|can i|is it|is there|old|inside")], next: "photo" },
+        photo: { say: "It opened in 1913, and yes, you can go in! Do you want me to take a photo of you?", es: "Se inauguró en 1913 y sí, se puede entrar. ¿Querés que te saque una foto?", you: "Aceptá y pedí algo concreto.", hint: ["Yes, please! With the clock behind me.", "Sure, thank you."], model: ["Yes, please! Can you get the clock behind me?", "Sure, thanks a lot."], open: 1, next: "rec" },
+        rec: { say: "Great shot! Any plans for tonight?", es: "¡Linda foto! ¿Tenés planes para esta noche?", you: "Contá tu plan con «I'm going to…».", hint: ["I'm going to see a show on Broadway.", "Not yet. Any recommendations?"], model: ["I'm going to see a musical on Broadway.", "Not yet. Do you have any recommendations?"], open: 2, next: "end" },
+        end: { say: "Nice! Okay, everybody, let's keep walking.", es: "¡Bien! Bueno, sigamos caminando.", end: true }
+      }
+    },
+    {
+      id: "customs", cat: "Viajes", title: "Aduana", sub: "¿Algo para declarar?", level: "A2",
+      who: { name: "Officer Brown", role: "agente de aduana en Estados Unidos", tone: "m", accent: "US" },
+      intro: "Pasaste migraciones. Ahora te para un agente de aduana.",
+      start: "start",
+      turns: {
+        start: { say: "Good afternoon. Do you have anything to declare?", es: "Buenas tardes. ¿Tenés algo para declarar?", you: "Respondé.", hint: ["No, nothing to declare.", "I'm not sure. I have some food."], model: ["No, I have nothing to declare.", "I'm not sure. I have some alfajores."], expect: [K("no|nothing|yes|not sure|food|declare|alfajores|gifts")], next: "food" },
+        food: { say: "Are you bringing any food, plants or meat?", es: "¿Traés comida, plantas o carne?", you: "Respondé con detalle.", hint: ["Only some chocolates.", "No, nothing like that."], model: ["Only some chocolates and alfajores, in their packages.", "No, nothing like that."], expect: [K("no|yes|only|chocolate|chocolates|alfajores|candy|cookies|nothing|meat|cheese|mate")], next: "cash" },
+        cash: { say: "Are you carrying more than ten thousand dollars in cash?", es: "¿Llevás más de diez mil dólares en efectivo?", you: "Respondé.", hint: ["No, much less.", "No, about five hundred."], model: ["No, I only have about five hundred dollars.", "No, much less than that."], expect: [K("no|yes|less|only|about|hundred|thousand|NUM")], next: "bag" },
+        bag: { say: "Okay. Can you open this bag for me, please?", es: "Bien. ¿Podés abrir este bolso, por favor?", you: "Aceptá.", hint: ["Sure, no problem.", "Of course."], model: ["Sure, no problem.", "Of course. Here you go."], open: 1, next: "what" },
+        what: { say: "What's this yellow package?", es: "¿Qué es este paquete amarillo?", you: "Explicá qué es.", hint: ["It's yerba mate, a kind of tea.", "It's a gift for a friend."], model: ["It's yerba mate. It's a kind of tea from Argentina.", "It's a gift for a friend. It's just coffee."], expect: [K("it'?s|it is|mate|tea|gift|coffee|present|herb|herbs|drink")], next: "end" },
+        end: { say: "Alright, that's fine. Welcome to the United States.", es: "Bien, está todo en orden. Bienvenido a Estados Unidos.", end: true }
+      }
+    },
+    {
+      id: "airbnb", cat: "Viajes", title: "Llegada al alojamiento", sub: "La anfitriona te explica todo", level: "A2+",
+      who: { name: "Kate", role: "anfitriona de tu alojamiento en Edimburgo", tone: "f", accent: "UK" },
+      intro: "Llegás al departamento que alquilaste. Kate te recibe en la puerta.",
+      start: "start",
+      turns: {
+        start: { say: "Hi! You made it. How was your journey?", es: "¡Hola! Llegaste. ¿Qué tal el viaje?", you: "Contá cómo fue.", hint: ["Long, but okay.", "Great, thanks. A bit tiring."], model: ["Long, but okay. The flight was on time.", "Great, thanks. Just a bit tired."], open: 2, next: "rules" },
+        rules: { say: "Here are your keys. Just one rule: no loud music after ten. Is that okay?", es: "Acá tenés las llaves. Una sola regla: nada de música fuerte después de las diez. ¿Está bien?", you: "Confirmá.", hint: ["Of course, no problem.", "Sure."], model: ["Of course, no problem.", "Sure, I'm very quiet."], open: 1, next: "wifi" },
+        wifi: { say: "Brilliant. Is there anything you need to know?", es: "Genial. ¿Necesitás saber algo?", you: "Preguntá por el wifi, la calefacción o el checkout.", hint: ["What's the wifi password?", "How does the heating work?"], model: ["What's the wifi password?", "How does the heating work?"], expect: [K("wifi|password|heating|heat|checkout|check out|towels|keys|how|what|where|when")], next: "eat" },
+        eat: { say: "It's all written on the fridge. Do you want any tips for food nearby?", es: "Está todo anotado en la heladera. ¿Querés recomendaciones para comer cerca?", you: "Pedí una recomendación concreta.", hint: ["Yes! Where can I eat something typical?", "Is there a good pub near here?"], model: ["Yes! Where can I try something typical?", "Is there a good pub near here?"], expect: [K("yes|where|pub|restaurant|typical|food|eat|cafe|near|recommend|try")], next: "out" },
+        out: { say: "Try the pub on the corner, it's lovely. Checkout is at eleven on Sunday. Any questions?", es: "Probá el pub de la esquina, es hermoso. El checkout es a las once del domingo. ¿Alguna pregunta?", you: "Pedí algo (dejar la valija, salir más tarde) o agradecé.", hint: ["Can I leave my bag after checkout?", "No, thanks for everything."], model: ["Can I leave my bag here after checkout?", "No, thank you for everything."], open: 2, next: "end" },
+        end: { say: "Of course. Enjoy Edinburgh!", es: "Por supuesto. ¡Disfrutá Edimburgo!", end: true }
+      }
+    },
+    {
+      id: "lostcity", cat: "Viajes", title: "Perdido y sin batería", sub: "Pedile ayuda a alguien en la calle", level: "A2",
+      who: { name: "Jordan", role: "un vecino en Boston", tone: "m", accent: "US" },
+      intro: "Se te apagó el celular y no sabés cómo volver al hotel. Le hablás a alguien en la calle.",
+      start: "start",
+      turns: {
+        start: { say: ["Hey, are you okay? You look lost.", "Hi there, can I help you with something?"], es: "Che, ¿estás bien? Parecés perdido.", you: "Pedí ayuda y explicá el problema.", hint: ["Yes, my phone died and I'm lost.", "Excuse me, could you help me?"], model: ["Yes, actually. My phone died and I'm lost.", "Excuse me, could you help me? I need to get to my hotel."], expect: [K("yes|lost|phone|died|battery|help|could you|hotel|need")], next: "where" },
+        where: { say: "Sure. Where are you trying to go?", es: "Claro. ¿A dónde querés ir?", you: "Decí a dónde.", hint: ["To the Marriott on Main Street.", "To my hotel near the park."], model: ["To the Marriott hotel, near the river.", "To my hotel. It's near Boston Common."], expect: [K("to|hotel|street|near|park|station|square|avenue|downtown")], next: "dir" },
+        dir: { say: "Okay, go straight for two blocks, then turn left at the church. It's on your right.", es: "Bien, seguí derecho dos cuadras, doblá a la izquierda en la iglesia. Está a tu derecha.", you: "Repetí las indicaciones para confirmar.", hint: ["Two blocks straight, then left at the church?", "Sorry, can you repeat?"], model: ["So, two blocks straight, left at the church, and it's on the right?", "Sorry, could you say that again more slowly?"], expect: [K("two|blocks|straight|left|right|church|so|repeat|again|slowly")], next: "phone" },
+        phone: { say: "Exactly. Do you want to use my phone to call anyone?", es: "Exacto. ¿Querés usar mi teléfono para llamar a alguien?", you: "Aceptá o rechazá con amabilidad.", hint: ["That's very kind, but I'm okay.", "Yes, please, just a quick call."], model: ["That's very kind, but I'm okay now. Thank you.", "Yes, please. Just a quick call to my friend."], open: 1, next: "end" },
+        end: { say: "No problem. Have a good night!", es: "De nada. ¡Que tengas una buena noche!", end: true }
+      }
+    },
+    {
+      id: "doctor", cat: "Ciudad y servicios", title: "En el médico", sub: "Explicá qué te pasa", level: "A2+",
+      who: { name: "Dr. Patel", role: "médica clínica en Londres", tone: "f", accent: "UK" },
+      intro: "Estás de viaje y no te sentís bien. Vas a una guardia.",
+      start: "start",
+      turns: {
+        start: { say: ["Hello, please have a seat. What brings you in today?", "Hi there. How can I help you today?"], es: "Hola, sentate. ¿Qué te trae por acá?", you: "Decí qué te pasa.", hint: ["I have a terrible headache.", "My stomach hurts."], model: ["I have a terrible headache and I feel dizzy.", "My stomach hurts and I can't eat."], expect: [K("headache|stomach|hurts|pain|fever|cough|dizzy|sick|feel|throat|back|ache|tired")], next: "since" },
+        since: { say: "I'm sorry to hear that. When did it start?", es: "Lo siento. ¿Cuándo empezó?", you: "Decí cuándo empezó.", hint: ["Two days ago.", "Yesterday morning."], model: ["It started two days ago.", "Yesterday morning, after breakfast."], expect: [K("ago|yesterday|today|morning|night|days|week|since|started|last")], next: "scale" },
+        scale: { say: "On a scale from one to ten, how bad is the pain?", es: "Del uno al diez, ¿qué tan fuerte es el dolor?", you: "Dá un número y describilo.", hint: ["About a seven.", "Six, but it gets worse at night."], model: ["About a seven. It gets worse at night.", "Five, more or less."], expect: [K("NUM|about|more or less|worse|better")], next: "meds" },
+        meds: { say: "Are you taking any medication at the moment?", es: "¿Estás tomando alguna medicación?", you: "Respondé.", hint: ["No, I'm not.", "Only ibuprofen."], model: ["No, I'm not taking anything.", "Only some ibuprofen yesterday."], expect: [K("no|not|nothing|only|ibuprofen|paracetamol|aspirin|yes|pills|medicine")], next: "plan" },
+        plan: { say: "Okay. I'll give you something for the pain. Drink lots of water and rest. Come back if it gets worse. Is that clear?", es: "Bien. Te doy algo para el dolor. Tomá mucha agua y descansá. Volvé si empeora. ¿Está claro?", you: "Confirmá lo que entendiste.", hint: ["Yes: water, rest, and come back if it gets worse.", "Sorry, how often should I take it?"], model: ["Yes. Lots of water, rest, and come back if it gets worse.", "Yes. How often should I take the pills?"], expect: [K("yes|water|rest|come back|worse|how often|clear|got it|okay|ok")], next: "end" },
+        end: { say: "Every eight hours, with food. Get well soon.", es: "Cada ocho horas, con comida. Que te mejores.", end: true }
+      }
+    },
+    {
+      id: "bank", cat: "Ciudad y servicios", title: "Tarjeta bloqueada", sub: "Llamá al banco desde el exterior", level: "B1",
+      who: { name: "Mike", role: "atención al cliente de un banco", tone: "m", accent: "US" },
+      intro: "Tu tarjeta fue rechazada en un comercio de Estados Unidos. Llamás al banco.",
+      start: "start",
+      turns: {
+        start: { say: "Thank you for calling. How can I help you today?", es: "Gracias por llamar. ¿En qué te puedo ayudar?", you: "Explicá el problema.", hint: ["My card was declined.", "I think my card is blocked."], model: ["Hi. My card was declined at a store and I think it's blocked.", "I'm traveling in the US and my card doesn't work."], expect: [K("card|declined|blocked|doesn'?t work|not working|rejected|problem")], next: "verify" },
+        verify: { say: "I can help with that. For security, can you confirm your full name and date of birth?", es: "Te ayudo. Por seguridad, ¿me confirmás tu nombre completo y fecha de nacimiento?", you: "Decí tu nombre y una fecha de nacimiento (podés inventarla para practicar).", hint: ["My name is … and I was born on …", "It's … , born on the …"], model: ["My name is Maxi Defranchi, and I was born on the third of May.", "Maxi Defranchi. My date of birth is the tenth of June."], open: 4, next: "why" },
+        why: { say: "Thank you. I see the card was blocked for an unusual transaction. Are you traveling right now?", es: "Gracias. Veo que la tarjeta se bloqueó por una operación inusual. ¿Estás de viaje?", you: "Confirmá dónde estás.", hint: ["Yes, I'm in Miami until Sunday.", "Yes, I'm in the US."], model: ["Yes, I'm in Miami until Sunday.", "Yes, I'm traveling in the United States for work."], expect: [K("yes|traveling|travelling|i'?m in|miami|us|united states|until|for work|vacation")], next: "recent" },
+        recent: { say: "Did you try to pay three hundred dollars at an electronics store this morning?", es: "¿Intentaste pagar 300 dólares en una casa de electrónica esta mañana?", you: "Confirmá o negá la compra.", hint: ["Yes, that was me.", "No, that wasn't me!"], model: ["Yes, that was me. I was buying headphones.", "No, that wasn't me!"], expect: [K("yes|no|that was me|wasn'?t me|i did|i didn'?t|me")], branch: [{ if: K("wasn'?t|didn'?t|not me"), to: "fraud" }], next: "unblock" },
+        unblock: { say: "Perfect. I've unblocked your card. You can try again now.", es: "Perfecto. Ya desbloqueé tu tarjeta. Podés intentar de nuevo.", you: "Agradecé y preguntá cómo evitarlo.", hint: ["Thanks. How can I avoid this next time?", "Great, thank you."], model: ["Thanks a lot. How can I avoid this next time?", "Great, thank you for your help."], open: 1, next: "end" },
+        fraud: { say: "Then we'll cancel this card and send you a new one. Where are you staying?", es: "Entonces cancelamos esta tarjeta y te mandamos una nueva. ¿Dónde te alojás?", you: "Dá la dirección del hotel.", hint: ["At the Hilton in Miami Beach.", "At this address: …"], model: ["At the Hilton hotel in Miami Beach.", "I'm staying at a friend's house. I'll text you the address."], open: 2, next: "end" },
+        end: { say: "All done. Is there anything else? No? Have a great day.", es: "Listo. ¿Algo más? ¿No? Que tengas un buen día.", end: true }
+      }
+    },
+    {
+      id: "sim", cat: "Ciudad y servicios", title: "Comprar un chip", sub: "Datos para el celular en el viaje", level: "A2",
+      who: { name: "Tina", role: "vendedora de una tienda de celulares", tone: "f", accent: "US" },
+      intro: "Necesitás datos para el celular durante tu viaje. Entrás a una tienda.",
+      start: "start",
+      turns: {
+        start: { say: "Hi! What can I do for you?", es: "¡Hola! ¿Qué necesitás?", you: "Pedí un chip o eSIM con datos.", hint: ["I need a SIM card with data.", "Do you have prepaid eSIMs?"], model: ["Hi. I need a prepaid SIM card with data.", "Do you have eSIMs for tourists?"], expect: [K("sims?|esims?|card|data|prepaid|internet|phone|plan|need")], next: "stay" },
+        stay: { say: "Sure. How long are you staying?", es: "Claro. ¿Cuánto tiempo te quedás?", you: "Respondé.", hint: ["Two weeks.", "Until the end of the month."], model: ["Two weeks.", "About ten days."], expect: [K("week|weeks|days|month|until|about|NUM")], next: "plan" },
+        plan: { say: "We have fifteen gigs for thirty dollars, or unlimited for fifty. Which one?", es: "Tenemos 15 gigas por 30 dólares o ilimitado por 50. ¿Cuál?", you: "Elegí y explicá.", hint: ["Fifteen is enough.", "Unlimited, because I use maps a lot."], model: ["Fifteen gigs is enough for me.", "Unlimited, please. I use maps and video calls a lot."], expect: [K("fifteen|unlimited|first|second|cheaper|enough|NUM|gigs|one")], next: "passport" },
+        passport: { say: "Great. I'll need your passport to register it.", es: "Bien. Necesito tu pasaporte para registrarlo.", you: "Entregalo y preguntá si te lo configura.", hint: ["Here you are. Can you set it up for me?", "Sure."], model: ["Here you are. Could you set it up for me?", "Sure. Will my WhatsApp keep working?"], open: 1, next: "end" },
+        end: { say: "Of course. Give me two minutes and you're ready to go.", es: "Por supuesto. Dame dos minutos y listo.", end: true }
+      }
+    },
+    {
+      id: "gym", cat: "Ciudad y servicios", title: "Anotarte al gimnasio", sub: "Planes, horarios y objetivos", level: "A2",
+      who: { name: "Ryan", role: "recepcionista de un gimnasio", tone: "m", accent: "US" },
+      intro: "Querés anotarte en un gimnasio mientras vivís un tiempo afuera.",
+      start: "start",
+      turns: {
+        start: { say: ["Hey! Interested in a membership?", "Hi there! First time here?"], es: "¡Hola! ¿Te interesa hacerte socio?", you: "Decí que sí y preguntá precios.", hint: ["Yes. How much is it?", "Yes, what plans do you have?"], model: ["Yes. How much is a monthly membership?", "Yes. What plans do you have?"], expect: [K("yes|how much|price|plans|membership|monthly|cost|interested")], next: "often" },
+        often: { say: "It's forty a month. How often do you usually work out?", es: "Son 40 por mes. ¿Cada cuánto entrenás?", you: "Respondé con «… times a week».", hint: ["Three times a week.", "Almost every day."], model: ["Usually three times a week.", "Almost every day, in the morning."], expect: [K("times|week|every day|daily|once|twice|morning|evening|NUM|almost|usually")], next: "goal" },
+        goal: { say: "Nice. What's your main goal?", es: "Bien. ¿Cuál es tu objetivo principal?", you: "Contá tu objetivo.", hint: ["I want to get stronger.", "To lose a little weight and feel better."], model: ["I want to get stronger and have more energy.", "I just want to stay healthy."], expect: [K("want|to|stronger|healthy|lose|weight|energy|muscle|fit|feel|better|run|stress")], next: "classes" },
+        classes: { say: "We also have classes: yoga, spinning and boxing. Interested?", es: "También hay clases: yoga, spinning y boxeo. ¿Te interesa?", you: "Elegí una y preguntá el horario.", hint: ["Boxing sounds fun. When is it?", "Maybe yoga. What time?"], model: ["Boxing sounds fun. What days is it?", "Maybe yoga. What time are the classes?"], expect: [K("yoga|spinning|boxing|when|what time|days|sounds|maybe|no thanks|not really")], next: "end" },
+        end: { say: "Monday and Thursday at seven. Let's get you signed up!", es: "Lunes y jueves a las siete. ¡Vamos a anotarte!", end: true }
+      }
+    },
+    {
+      id: "haircut", cat: "Ciudad y servicios", title: "En la peluquería", sub: "Explicá cómo querés el corte", level: "A2+",
+      who: { name: "Lily", role: "peluquera en Londres", tone: "f", accent: "UK" },
+      intro: "Necesitás un corte de pelo antes de una reunión importante.",
+      start: "start",
+      turns: {
+        start: { say: "Hiya! What are we doing today?", es: "¡Hola! ¿Qué hacemos hoy?", you: "Pedí un corte.", hint: ["Just a trim, please.", "I'd like a haircut, not too short."], model: ["Just a trim, please. Not too short.", "I'd like a haircut and a beard trim."], expect: [K("trim|haircut|cut|short|beard|shave|hair|please")], next: "sides" },
+        sides: { say: "Sure. How short on the sides?", es: "Dale. ¿Qué tan corto a los costados?", you: "Explicá. Podés usar números de máquina.", hint: ["Number two on the sides.", "Short on the sides, longer on top."], model: ["Number two on the sides, and a bit longer on top.", "Quite short on the sides, please."], expect: [K("short|number|sides|top|longer|shorter|NUM|bit|little|quite")], next: "top" },
+        top: { say: "And on top, how much should I take off?", es: "¿Y arriba, cuánto saco?", you: "Indicá cuánto.", hint: ["Just a little.", "About two centimeters."], model: ["Just a little, please.", "About two centimeters."], expect: [K("little|bit|centimeters|centimetres|inch|inches|NUM|not much|half")], next: "beard" },
+        beard: { say: "Lovely. Do you want me to do the beard too?", es: "Perfecto. ¿Querés que te haga la barba también?", you: "Respondé.", hint: ["Yes, please, just tidy it up.", "No, thanks."], model: ["Yes, please. Just tidy it up.", "No, thanks. Just the hair."], expect: [K("yes|no|tidy|trim|thanks|please|just")], next: "end" },
+        end: { say: "Right, let's get started then.", es: "Bueno, empecemos.", end: true }
+      }
+    },
+    {
+      id: "supermarket", cat: "Ciudad y servicios", title: "En el supermercado", sub: "Preguntá dónde está cada cosa", level: "A2",
+      who: { name: "Eddie", role: "repositor de un supermercado", tone: "m", accent: "US" },
+      intro: "No encontrás lo que buscás en un supermercado de Estados Unidos.",
+      start: "start",
+      turns: {
+        start: { say: "Hey, can I help you find something?", es: "Hola, ¿te ayudo a encontrar algo?", you: "Preguntá dónde está algo.", hint: ["Yes, where can I find the milk?", "Excuse me, where is the bread?"], model: ["Yes, please. Where can I find the oat milk?", "Excuse me, where is the bread?"], expect: [K("where|find|milk|bread|coffee|rice|pasta|eggs|cheese|meat|fruit|water|looking for")], next: "aisle" },
+        aisle: { say: "That's in aisle seven, next to the cereal. Anything else?", es: "Está en el pasillo siete, al lado de los cereales. ¿Algo más?", you: "Preguntá por otro producto.", hint: ["Do you have yerba mate?", "Where are the cleaning products?"], model: ["Do you have yerba mate?", "Yes, where are the cleaning products?"], expect: [K("do you have|where|mate|cleaning|soap|shampoo|is there|are there|any")], next: "price" },
+        price: { say: "We don't have mate, sorry. Cleaning stuff is at the back. Do you have a store card?", es: "Mate no tenemos, perdón. Lo de limpieza está al fondo. ¿Tenés tarjeta del súper?", you: "Respondé y preguntá por un descuento.", hint: ["No. Are there any discounts?", "No, I don't."], model: ["No, I don't. Are there any discounts without it?", "No. Can I get one today?"], expect: [K("no|yes|don'?t|discount|discounts|get one|card|sign up")], next: "bag" },
+        bag: { say: "You can sign up at the checkout, it's free. Paper or plastic?", es: "Te podés anotar en la caja, es gratis. ¿Bolsa de papel o de plástico?", you: "Elegí.", hint: ["Paper, please.", "I have my own bag."], model: ["Paper, please.", "No bag, thanks. I have my own."], expect: [K("paper|plastic|own|no bag|my bag|none")], next: "end" },
+        end: { say: "Great. Have a good one!", es: "Genial. ¡Que te vaya bien!", end: true }
+      }
+    },
+    {
+      id: "refund", cat: "Ciudad y servicios", title: "Devolver algo roto", sub: "Cambio o devolución del dinero", level: "B1",
+      who: { name: "Megan", role: "atención al cliente de una tienda", tone: "f", accent: "US" },
+      intro: "Compraste unos auriculares y dejaron de funcionar a los dos días.",
+      start: "start",
+      turns: {
+        start: { say: "Hi, how can I help?", es: "Hola, ¿en qué te ayudo?", you: "Explicá el problema.", hint: ["I bought these headphones, but they don't work.", "These stopped working after two days."], model: ["Hi. I bought these headphones on Monday, but they stopped working.", "These headphones don't work. The left side has no sound."], expect: [K("bought|don'?t work|doesn'?t work|stopped|broken|no sound|problem|headphones")], next: "receipt" },
+        receipt: { say: "I'm sorry. Do you have the receipt?", es: "Lo siento. ¿Tenés el ticket?", you: "Respondé.", hint: ["Yes, here it is.", "I have it on my email."], model: ["Yes, here it is.", "I have it in my email. Can I show you on my phone?"], expect: [K("yes|here|receipt|email|phone|no|lost")], next: "option" },
+        option: { say: "Thanks. Would you like a refund or an exchange?", es: "Gracias. ¿Querés que te devolvamos el dinero o cambiarlos?", you: "Elegí y explicá.", hint: ["A refund, please.", "An exchange for a better model."], model: ["A refund, please. I'd prefer to buy another brand.", "An exchange is fine, but I want a different model."], expect: [K("refund|exchange|money back|change|different|another|new one|swap")], next: "how" },
+        how: { say: "No problem. The refund goes back to your card in three to five days. Is that okay?", es: "No hay problema. El reintegro vuelve a tu tarjeta en tres a cinco días. ¿Está bien?", you: "Aceptá o pedí otra cosa.", hint: ["That's fine, thanks.", "Could I get cash instead?"], model: ["That's fine, thank you.", "Could I get cash instead? I'm leaving the country."], open: 1, next: "end" },
+        end: { say: "All done. Sorry again for the trouble.", es: "Listo. Perdón otra vez por la molestia.", end: true }
+      }
+    },
+    {
+      id: "delivery", cat: "Ciudad y servicios", title: "El delivery no llegó", sub: "Reclamá por teléfono", level: "B1",
+      who: { name: "Sean", role: "atención al cliente de una app de comida", tone: "m", accent: "US" },
+      intro: "Pediste comida hace una hora y nunca llegó. Llamás al servicio de atención.",
+      start: "start",
+      turns: {
+        start: { say: "Thanks for calling. What seems to be the problem?", es: "Gracias por llamar. ¿Cuál es el problema?", you: "Explicá que el pedido no llegó.", hint: ["My order didn't arrive.", "I ordered an hour ago and I'm still waiting."], model: ["My order didn't arrive. I ordered an hour ago.", "I'm still waiting for my food. The app says it was delivered."], expect: [K("order|didn'?t arrive|never arrived|waiting|hour|delivered|food|late|still")], next: "number" },
+        number: { say: "I'm sorry about that. Can I have your order number?", es: "Disculpá. ¿Me pasás el número de pedido?", you: "Dictá el número.", hint: ["It's four seven two nine.", "Let me check… it's …"], model: ["Sure. It's four seven two nine.", "Let me check. It's B as in boy, eight, one, five."], open: 1, next: "addr" },
+        addr: { say: "I see it. The driver says nobody answered. Can you confirm your address?", es: "Lo veo. El repartidor dice que nadie atendió. ¿Me confirmás la dirección?", you: "Confirmá la dirección y aclarás que estabas.", hint: ["It's 25 Main Street, apartment 3B. I was home all the time.", "I was home! My address is …"], model: ["It's twenty-five Main Street, apartment three B. I was home the whole time.", "I was home! The bell doesn't work, so he should call me."], expect: [K("street|apartment|avenue|address|home|bell|NUM|was|call")], next: "fix" },
+        fix: { say: "Thanks. I can send the food again or give you a full refund. Which do you prefer?", es: "Gracias. Puedo reenviar la comida o devolverte todo el dinero. ¿Qué preferís?", you: "Elegí.", hint: ["A refund, please. It's too late now.", "Send it again, please."], model: ["A full refund, please. It's too late for dinner now.", "Please send it again, and ask the driver to call me."], expect: [K("refund|send|again|money|prefer|both|call")], next: "end" },
+        end: { say: "Done. I've also added a ten dollar credit to your account. Sorry again!", es: "Listo. También te sumé diez dólares de crédito. ¡Perdón otra vez!", end: true }
+      }
+    },
+    {
+      id: "flat", cat: "Ciudad y servicios", title: "Visitar un departamento", sub: "Preguntá todo antes de alquilar", level: "B1",
+      who: { name: "Mr. Hughes", role: "dueño de un departamento en alquiler", tone: "m", accent: "UK" },
+      intro: "Vas a ver un departamento para alquilar durante seis meses.",
+      start: "start",
+      turns: {
+        start: { say: "Come in. So, how long are you planning to stay?", es: "Pasá. ¿Cuánto tiempo pensás quedarte?", you: "Respondé.", hint: ["About six months.", "Until June."], model: ["About six months, maybe a year.", "Until the end of June."], expect: [K("months|month|year|until|about|maybe|NUM|weeks")], next: "work" },
+        work: { say: "And what do you do?", es: "¿Y a qué te dedicás?", you: "Contá tu trabajo.", hint: ["I work in communications.", "I'm a … for …"], model: ["I work in digital communications. I work from home some days.", "I'm a communications consultant."], expect: [K("i work|i'?m|communications|consultant|manager|lawyer|work from home|job")], next: "ask" },
+        ask: { say: "Lovely. This is the living room. Any questions about the flat?", es: "Bien. Este es el living. ¿Alguna pregunta sobre el departamento?", you: "Hacé dos preguntas (servicios, calefacción, mascotas, internet).", hint: ["Are bills included?", "Is the internet fast?"], model: ["Are the bills included in the rent?", "How fast is the internet? I work from home."], expect: [K("bills|included|internet|heating|pets|noise|neighbors|neighbours|deposit|how|is|are|can i")], next: "money" },
+        money: { say: "Bills are included except electricity. The rent is twelve hundred a month, plus one month deposit.", es: "Los servicios están incluidos menos la luz. El alquiler es 1200 por mes más un mes de depósito.", you: "Intentá negociar un poco.", hint: ["Could you do eleven hundred?", "Is the price negotiable?"], model: ["Is there any chance you could do eleven hundred?", "Is the price negotiable if I stay for a year?"], expect: [K("could you|negotiable|discount|less|lower|chance|eleven|hundred|cheaper|year")], next: "when" },
+        when: { say: "Maybe, if you stay a full year. When would you like to move in?", es: "Tal vez, si te quedás un año. ¿Cuándo te querés mudar?", you: "Decí la fecha.", hint: ["On the first of next month.", "As soon as possible."], model: ["On the first of next month, if that works.", "As soon as possible. Next week?"], expect: [K("first|next|month|week|soon|possible|monday|tuesday|wednesday|thursday|friday|NUM")], next: "end" },
+        end: { say: "That works. I'll send you the contract by email.", es: "Me sirve. Te mando el contrato por mail.", end: true }
+      }
+    },
+    {
+      id: "neighbor", cat: "Vida social", title: "Tu vecina", sub: "Charla en el ascensor", level: "A2",
+      who: { name: "Ruth", role: "tu vecina del cuarto piso", tone: "f", accent: "US" },
+      intro: "Te cruzás con tu vecina en el ascensor de tu edificio nuevo.",
+      start: "start",
+      turns: {
+        start: { say: ["Hi! Are you the new neighbor?", "Hello! I don't think we've met. Did you just move in?"], es: "¡Hola! ¿Sos el vecino nuevo?", you: "Presentate.", hint: ["Yes! I'm Maxi, I live in 5B.", "Yes, I moved in last week."], model: ["Yes! I'm Maxi. I just moved into 5B.", "Yes, I moved in last week. Nice to meet you."], expect: [K("yes|i'?m|moved|new|live|nice to meet|apartment|flat")], next: "from" },
+        from: { say: "Welcome! I'm Ruth. Where are you from?", es: "¡Bienvenido! Soy Ruth. ¿De dónde sos?", you: "Respondé y agregá un detalle.", hint: ["From Argentina. I'm here for work.", "From Buenos Aires."], model: ["From Buenos Aires. I'm here for work for a few months.", "I'm from Argentina."], expect: [K("from|argentina|buenos aires|i'?m|work")], next: "tip" },
+        tip: { say: "Oh, nice! If you need anything, just knock. Do you know where the trash goes?", es: "¡Qué bueno! Si necesitás algo, golpeá nomás. ¿Sabés dónde va la basura?", you: "Decí que no y pedí que te explique.", hint: ["No, I don't. Where does it go?", "Not really. Can you tell me?"], model: ["No, I don't. Where does it go?", "Not really. Could you tell me?"], expect: [K("no|don'?t|where|tell me|not really|could you|can you|yes")], next: "package" },
+        package: { say: "In the basement, and recycling on Tuesdays. Oh, and I think I have a package of yours!", es: "En el sótano, y el reciclaje los martes. ¡Ah, y creo que tengo un paquete tuyo!", you: "Agradecé y combiná para buscarlo.", hint: ["Really? Thank you! Can I get it later?", "Oh, thanks! When can I pick it up?"], model: ["Really? Thank you so much! Can I pick it up tonight?", "Oh, thanks! I'll come by after work."], open: 2, next: "end" },
+        end: { say: "Sure, any time after six. See you later!", es: "Claro, después de las seis cuando quieras. ¡Nos vemos!", end: true }
+      }
+    },
+    {
+      id: "plans", cat: "Vida social", title: "Armar una salida", sub: "Proponé un plan para el finde", level: "A2+",
+      who: { name: "Ella", role: "una amiga de la oficina", tone: "f", accent: "US" },
+      intro: "Es viernes a la tarde. Ella te pregunta por el fin de semana.",
+      start: "start",
+      turns: {
+        start: { say: ["Any plans for the weekend?", "So, what are you doing this weekend?"], es: "¿Tenés planes para el fin de semana?", you: "Respondé con «I'm going to…» o «Not yet».", hint: ["Not yet. What about you?", "I'm going to …"], model: ["Not yet. What about you?", "I'm going to rest and maybe watch a movie."], open: 2, next: "idea" },
+        idea: { say: "I was thinking of going to a food market on Saturday. Want to come?", es: "Pensaba ir a un mercado de comida el sábado. ¿Querés venir?", you: "Aceptá con entusiasmo.", hint: ["I'd love to!", "Sounds great! What time?"], model: ["I'd love to! What time are you going?", "Sounds great. Count me in!"], expect: [K("love to|sounds|great|yes|sure|count me in|what time|why not|of course")], next: "time" },
+        time: { say: "Around eleven? We could have lunch there.", es: "¿A eso de las once? Podemos almorzar ahí.", you: "Confirmá o proponé otra hora.", hint: ["Eleven is perfect.", "Could we make it twelve?"], model: ["Eleven is perfect.", "Could we make it twelve? I have the gym in the morning."], expect: [K("eleven|twelve|perfect|fine|great|could we|make it|later|earlier|ok|okay")], next: "meet" },
+        meet: { say: "Sure. Should we meet there or at the station?", es: "Dale. ¿Nos encontramos ahí o en la estación?", you: "Elegí el lugar.", hint: ["Let's meet at the station.", "I'll meet you there."], model: ["Let's meet at the station. It's easier for me.", "I'll meet you there."], expect: [K("station|there|meet|let'?s|i'?ll|entrance|corner")], next: "end" },
+        end: { say: "Perfect. I'll text you the address. See you Saturday!", es: "Perfecto. Te mando la dirección. ¡Nos vemos el sábado!", end: true }
+      }
+    },
+    {
+      id: "party", cat: "Vida social", title: "En una fiesta", sub: "Charlá con alguien que no conocés", level: "A2+",
+      who: { name: "Leo", role: "un invitado en una fiesta", tone: "m", accent: "UK" },
+      intro: "Estás en el cumpleaños de una compañera de trabajo y no conocés a casi nadie.",
+      start: "start",
+      turns: {
+        start: { say: ["Hi! How do you know Sarah?", "Hey there. Are you a friend of Sarah's?"], es: "¡Hola! ¿De dónde conocés a Sarah?", you: "Explicá de dónde la conocés.", hint: ["We work together.", "She's my colleague."], model: ["We work together. She's on my team.", "She's my colleague. And you?"], expect: [K("work|colleague|team|together|friend|met|office|school")], next: "drink" },
+        drink: { say: "Ah, nice. I went to school with her. Can I get you a drink?", es: "Ah, qué bien. Yo fui al colegio con ella. ¿Te traigo algo para tomar?", you: "Aceptá o pedí algo sin alcohol.", hint: ["A beer, please.", "Just a soda, thanks."], model: ["Sure, a beer would be great.", "Just a soda, thanks. I'm driving."], expect: [K("beer|wine|soda|water|coke|juice|thanks|please|sure|no|nothing|driving")], next: "music" },
+        music: { say: "Here you go. What do you think of the music?", es: "Acá tenés. ¿Qué te parece la música?", you: "Opiná y contá qué música te gusta.", hint: ["It's great. I love this song.", "Not my style. I prefer rock."], model: ["It's great! I love this song.", "It's not really my style. I prefer Argentine rock."], open: 3, next: "free" },
+        free: { say: "Fair enough! So what do you do for fun?", es: "¡Me parece justo! ¿Y qué hacés para divertirte?", you: "Contá tus hobbies con «I like + -ing».", hint: ["I like playing football and cooking.", "I enjoy reading."], model: ["I like playing football and cooking for friends.", "I enjoy traveling and trying new food."], expect: [K("like|love|enjoy|playing|reading|cooking|watching|traveling|travelling|going|football|music|gym|running")], next: "end" },
+        end: { say: "Cool. Oh, they're bringing the cake! Come on, let's sing.", es: "¡Buenísimo! Ah, traen la torta. Vamos a cantar.", end: true }
+      }
+    },
+    {
+      id: "family", cat: "Vida social", title: "Hablar de tu familia", sub: "Hermanos, padres y tradiciones", level: "A2",
+      who: { name: "Molly", role: "una compañera de curso", tone: "f", accent: "UK" },
+      intro: "En un descanso del curso, Molly te pregunta por tu familia.",
+      start: "start",
+      turns: {
+        start: { say: ["Do you have any brothers or sisters?", "So, is your family big?"], es: "¿Tenés hermanos?", you: "Respondé con detalle.", hint: ["Yes, I have one brother.", "No, I'm an only child."], model: ["Yes, I have one older brother and a younger sister.", "No, I'm an only child."], expect: [K("yes|no|brother|brothers|sister|sisters|only child|siblings|older|younger")], next: "parents" },
+        parents: { say: "And where do your parents live?", es: "¿Y dónde viven tus padres?", you: "Respondé.", hint: ["In Buenos Aires.", "My mom lives in …"], model: ["They live in Buenos Aires, near my house.", "My mom lives in Buenos Aires and my dad in Córdoba."], expect: [K("live|lives|in|buenos aires|near|city|argentina|mom|dad|mother|father|parents")], next: "often" },
+        often: { say: "Do you see them often?", es: "¿Los ves seguido?", you: "Respondé con frecuencia.", hint: ["Every Sunday.", "Not very often."], model: ["Yes, every Sunday. We have lunch together.", "Not very often, because I'm very busy."], expect: [K("every|often|sunday|week|month|once|twice|not very|always|sometimes|usually|never")], next: "trad" },
+        trad: { say: "That's lovely. Do you have any family traditions?", es: "Qué lindo. ¿Tienen alguna tradición familiar?", you: "Contá una tradición (asado, cumpleaños, fiestas).", hint: ["We have an asado every Sunday.", "On Christmas we …"], model: ["We have a big barbecue, an asado, every Sunday.", "At Christmas we eat late and stay up until two."], open: 4, next: "end" },
+        end: { say: "That sounds amazing. I'd love to try an asado one day!", es: "Suena increíble. ¡Me encantaría probar un asado algún día!", end: true }
+      }
+    },
+    {
+      id: "series", cat: "Vida social", title: "Recomendar una serie", sub: "Contá de qué se trata y por qué verla", level: "B1",
+      who: { name: "Josh", role: "un amigo de otro país", tone: "m", accent: "US" },
+      intro: "Josh busca algo para ver esta noche y te pide recomendaciones.",
+      start: "start",
+      turns: {
+        start: { say: "I need something new to watch. Any recommendations?", es: "Necesito algo nuevo para ver. ¿Alguna recomendación?", you: "Recomendá una serie o película.", hint: ["You should watch …", "Have you seen …?"], model: ["You should watch The Bear. It's amazing.", "Have you seen Succession? It's my favorite."], expect: [K("should|watch|have you seen|recommend|try|series|show|movie|film|it'?s")], next: "about" },
+        about: { say: "I haven't seen it. What's it about?", es: "No la vi. ¿De qué se trata?", you: "Contá de qué trata en presente.", hint: ["It's about a chef who …", "It's about a family that …"], model: ["It's about a young chef who goes back to Chicago to run his family's restaurant.", "It's about a rich family that fights for control of a company."], expect: [K("it'?s about|about|who|that|story|family|man|woman|guy|chef|people")], next: "why" },
+        why: { say: "Sounds interesting. Why do you like it so much?", es: "Suena interesante. ¿Por qué te gusta tanto?", you: "Dá dos razones.", hint: ["Because the acting is great and …", "I love the characters."], model: ["Because the acting is great and every episode is very intense.", "I love the characters, and the dialogues are really smart."], expect: [K("because|love|like|acting|characters|story|funny|intense|smart|real|music")], next: "arg" },
+        arg: { say: "Cool. Is there any good Argentine movie I should see?", es: "¡Bien! ¿Hay alguna buena película argentina que tenga que ver?", you: "Recomendá una película argentina.", hint: ["Yes, you should see …", "Wild Tales is great."], model: ["Yes, you should see Wild Tales. It's really funny.", "The Secret in Their Eyes. It won an Oscar."], open: 3, next: "end" },
+        end: { say: "Awesome, I'm adding both to my list. Thanks!", es: "¡Genial, las agrego a mi lista! ¡Gracias!", end: true }
+      }
+    },
+    {
+      id: "theft", cat: "Imprevistos", title: "Te robaron el celular", sub: "Hacé la denuncia en la comisaría", level: "B1",
+      who: { name: "Officer Hall", role: "policía en Londres", tone: "f", accent: "UK" },
+      intro: "Te robaron el celular en el metro. Vas a la comisaría a hacer la denuncia.",
+      start: "start",
+      turns: {
+        start: { say: "Good afternoon. How can I help you?", es: "Buenas tardes. ¿En qué te puedo ayudar?", you: "Explicá qué pasó.", hint: ["Someone stole my phone.", "I want to report a theft."], model: ["I want to report a theft. Someone stole my phone on the tube.", "My phone was stolen this morning."], expect: [K("stole|stolen|theft|robbed|report|phone|wallet|bag|someone")], next: "when" },
+        when: { say: "I'm sorry. When and where did it happen?", es: "Lo siento. ¿Cuándo y dónde pasó?", you: "Dá hora y lugar en pasado.", hint: ["About an hour ago, on the tube.", "This morning, at Oxford Circus station."], model: ["About an hour ago, on the Central line near Oxford Circus.", "This morning, at around nine, on the bus."], expect: [K("ago|morning|afternoon|today|yesterday|on the|at|station|tube|bus|train|street|around")], next: "how" },
+        how: { say: "Did you see the person? Can you describe what happened?", es: "¿Viste a la persona? ¿Podés describir qué pasó?", you: "Contá lo que pasó.", hint: ["The train was full and someone pushed me.", "I didn't see anything."], model: ["The train was very full. Someone pushed me, and then my phone was gone.", "No, I didn't see anything. I noticed it when I got off."], open: 5, next: "phone" },
+        phone: { say: "Can you describe the phone?", es: "¿Podés describir el teléfono?", you: "Describilo.", hint: ["It's a black iPhone with a blue case.", "A Samsung, grey, quite new."], model: ["It's a black iPhone fifteen with a blue case.", "It's a grey Samsung. It's almost new."], expect: [K("iphone|samsung|black|white|grey|gray|blue|case|new|old|phone|it'?s")], next: "contact" },
+        contact: { say: "Okay. How can we contact you if we find it?", es: "Bien. ¿Cómo te contactamos si aparece?", you: "Dá un contacto alternativo.", hint: ["By email: …", "You can call my hotel."], model: ["By email, please. I don't have a phone now.", "You can call my hotel. Here's the number."], expect: [K("email|hotel|call|number|address|contact|friend|by")], next: "end" },
+        end: { say: "Here's your crime reference number. You'll need it for your insurance.", es: "Este es el número de denuncia. Lo vas a necesitar para el seguro.", end: true }
+      }
+    },
+    {
+      id: "overcharge", cat: "Imprevistos", title: "Te cobraron de más", sub: "Revisá la cuenta con el mozo", level: "A2+",
+      who: { name: "Nick", role: "mozo en un bar de Nueva York", tone: "m", accent: "US" },
+      intro: "Revisás la cuenta y te cobraron cosas que no pediste.",
+      start: "start",
+      turns: {
+        start: { say: "Here's your check. Everything okay?", es: "Acá está la cuenta. ¿Todo bien?", you: "Señalá que hay un error con amabilidad.", hint: ["Excuse me, I think there's a mistake.", "Sorry, this isn't right."], model: ["Excuse me, I think there's a mistake on the check.", "Sorry, I don't think this is right."], expect: [K("mistake|wrong|error|isn'?t right|not right|excuse me|sorry|think")], next: "what" },
+        what: { say: "Oh, let me see. What's wrong?", es: "Uh, a ver. ¿Qué está mal?", you: "Explicá qué no pediste.", hint: ["We didn't order the wine.", "We only had two beers, not four."], model: ["We didn't order this bottle of wine.", "We only had two beers, not four."], expect: [K("didn'?t|only|not|order|ordered|had|wine|beer|beers|dessert|NUM")], next: "fix" },
+        fix: { say: "You're right, that's from another table. I'm so sorry. Let me fix that.", es: "Tenés razón, es de otra mesa. Perdón. Ya lo corrijo.", you: "Respondé con amabilidad.", hint: ["No problem, it happens.", "Thanks, no worries."], model: ["No problem, it happens.", "Thanks, don't worry."], open: 1, next: "tip" },
+        tip: { say: "Here's the new check. Would you like to add a tip?", es: "Acá está la cuenta nueva. ¿Querés agregar propina?", you: "Decidí la propina. En Estados Unidos se deja entre 15 y 20 %.", hint: ["Yes, twenty percent.", "Fifteen percent, please."], model: ["Yes, let's do twenty percent.", "Fifteen percent, please."], expect: [K("yes|no|percent|NUM|tip|fifteen|twenty|eighteen")], next: "end" },
+        end: { say: "Thank you so much. Sorry again, and have a great night!", es: "Muchísimas gracias. Perdón de nuevo, ¡y que tengas una linda noche!", end: true }
+      }
+    },
+    {
+      id: "missed", cat: "Imprevistos", title: "Perdiste la conexión", sub: "Tu vuelo llegó tarde y perdiste el siguiente", level: "B1",
+      who: { name: "Claire", role: "agente de la aerolínea en Madrid", tone: "f", accent: "UK" },
+      intro: "Tu primer vuelo se atrasó y perdiste la conexión. Vas al mostrador de transbordos.",
+      start: "start",
+      turns: {
+        start: { say: "Hi, are you here for a missed connection?", es: "Hola, ¿venís por una conexión perdida?", you: "Explicá la situación.", hint: ["Yes, my first flight was late.", "Yes, I missed my flight to Buenos Aires."], model: ["Yes. My first flight was late and I missed my flight to Buenos Aires.", "Yes, I missed my connection because of the delay."], expect: [K("yes|missed|late|delay|delayed|connection|flight")], next: "next" },
+        next: { say: "Let me check. The next flight is tomorrow morning. Is that okay?", es: "Déjame ver. El próximo vuelo es mañana a la mañana. ¿Te sirve?", you: "Preguntá si hay algo antes.", hint: ["Is there anything earlier?", "Tomorrow is fine."], model: ["Is there anything earlier, maybe with another airline?", "Tomorrow is fine, but I need a hotel."], expect: [K("earlier|anything|another|tonight|today|tomorrow|fine|hotel|airline|other")], next: "hotel" },
+        hotel: { say: "Unfortunately not. But we'll cover your hotel and dinner tonight.", es: "Lamentablemente no. Pero te cubrimos el hotel y la cena de esta noche.", you: "Preguntá por el traslado y el equipaje.", hint: ["How do I get to the hotel?", "What about my suitcase?"], model: ["Thank you. How do I get to the hotel?", "What happens with my suitcase?"], expect: [K("how|what|where|suitcase|luggage|bag|hotel|shuttle|bus|taxi|get to")], next: "end" },
+        end: { say: "There's a free shuttle at door five, and your bag will go on tomorrow's flight. Again, sorry.", es: "Hay un traslado gratis en la puerta cinco y tu valija va en el vuelo de mañana. Perdón otra vez.", end: true }
       }
     }
   ];

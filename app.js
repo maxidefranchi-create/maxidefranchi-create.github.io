@@ -3,6 +3,7 @@
   "use strict";
   const D = window.VOZ_DATA, C = window.VOZ_CONF || { words: {}, pairRule: {} };
   const M = window.VozMouth, CV = window.VOZ_CONVOS;
+  const X = window.VOZ_EXTRA || { TRICKS: {}, EAR: {}, HARD: [] };
   const SND = window.VOZ_SOUNDS || { GUIDES: {}, GROUPS: [], BY_ISSUE: {}, BY_RULE: {}, HINT: {} };
   /* diccionario de pronunciación (se baja la primera vez que hace falta) */
   let DICT = null, dictP = null;
@@ -45,6 +46,8 @@
     eye: sv('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
     spark: sv('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>'),
     key: sv('<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/>'),
+    ear: sv('<path d="M6.5 9a5.5 5.5 0 1 1 11 0c0 2.6-1.6 3.7-2.8 5.1-.9 1-1.1 2.2-1.5 3.3A2.6 2.6 0 0 1 8.4 18"/><path d="M9.5 9.3a2.5 2.5 0 0 1 5 0c0 1.3-1.2 1.7-1.7 2.7"/>'),
+    chart: sv('<path d="M4 19V5M4 19h16"/><path d="M7 15l4-4 3 3 5-6"/>'),
     ext: sv('<path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/>')
   };
 
@@ -410,6 +413,8 @@
     $$("[data-word]", root).forEach((b) => (b.onclick = () => openWord(b.getAttribute("data-word"))));
     $$("[data-guide]", root).forEach((b) => (b.onclick = () => { closeSheet(); go({ name: "guia", id: b.getAttribute("data-guide"), word: b.getAttribute("data-gword") || null, from: Object.assign({}, view) }); }));
     $$("[data-es]", root).forEach((b) => (b.onclick = () => { const es = b.closest(".bub").querySelector(".es"); if (es) { es.hidden = !es.hidden; b.setAttribute("aria-pressed", String(!es.hidden)); } }));
+    $$("[data-oido]", root).forEach((b) => (b.onclick = () => { closeSheet(); go({ name: "oido", id: b.getAttribute("data-oido"), from: Object.assign({}, view, { round: undefined }) }); }));
+    $$("[data-decir]", root).forEach((b) => (b.onclick = () => { closeSheet(); go({ name: "decir", text: b.getAttribute("data-decir"), label: b.getAttribute("data-dlabel") || "", from: Object.assign({}, view) }); }));
     $$("[data-reveal]", root).forEach((b) => (b.onclick = () => { b.classList.remove("veil"); b.removeAttribute("data-reveal"); b.removeAttribute("role"); }));
   }
 
@@ -478,7 +483,8 @@
   let view = { name: "hoy" };
   const TABS = [["hoy", "Hoy", I.home], ["sonidos", "Sonidos", I.mouth], ["frases", "Frases", I.text], ["repeti", "Repetí", I.repeat], ["charla", "Charlá", I.chat]];
   function renderTabs() {
-    const cur = { hoy: "hoy", session: "hoy", progreso: "hoy", pares: "sonidos", sonidos: "sonidos", guia: "sonidos", drill: "sonidos", wdrill: "sonidos", frases: "frases", serie: "frases", repeti: "repeti", habla: "charla", charla: "charla", conv: "charla", ia: "charla", iachat: "charla" }[view.name];
+    const nm = view.name === "decir" && view.from ? view.from.name : view.name;
+    const cur = { decir: "charla", hoy: "hoy", session: "hoy", progreso: "hoy", pares: "sonidos", sonidos: "sonidos", guia: "sonidos", drill: "sonidos", wdrill: "sonidos", oido: "sonidos", dificiles: "sonidos", diag: "charla", frases: "frases", serie: "frases", repeti: "repeti", habla: "charla", charla: "charla", conv: "charla", ia: "charla", iachat: "charla" }[nm];
     $("#tabs").innerHTML = TABS.map(([id, l, ic]) => `<button class="tab" data-tab="${id}" ${cur === id ? 'aria-current="page"' : ""}>${ic}<span>${l}</span></button>`).join("");
     $$("[data-tab]").forEach((b) => (b.onclick = () => go({ name: b.getAttribute("data-tab") })));
   }
@@ -494,7 +500,7 @@
   function render() {
     runCleanups();
     renderTabs();
-    const f = { hoy: vHoy, session: vSession, progreso: vProgreso, pares: vSonidos, sonidos: vSonidos, guia: vGuia, wdrill: vWdrill, drill: vDrill, frases: vFrases, serie: vSerie, repeti: vRepeti, habla: vHabla, charla: vCharla, conv: vConv, ia: vIA, iachat: vIAChat }[view.name] || vHoy;
+    const f = { hoy: vHoy, session: vSession, progreso: vProgreso, pares: vSonidos, sonidos: vSonidos, guia: vGuia, wdrill: vWdrill, drill: vDrill, frases: vFrases, serie: vSerie, repeti: vRepeti, habla: vHabla, charla: vCharla, conv: vConv, ia: vIA, iachat: vIAChat, diag: vDiag, oido: vOido, decir: vDecir, dificiles: vDificiles }[view.name] || vHoy;
     f();
     bindCommon(app);
     bindEngineButtons();
@@ -869,6 +875,8 @@
   function vSonidos() {
     app.innerHTML = `<div class="screen stack">${header("Sonidos", "Cómo se pone la boca")}
       <p class="muted">Cada sonido con un dibujo animado de la boca, comparado con lo que hacemos en español. Primero mirás y escuchás, después practicás con el micrófono.</p>
+      <section class="card earcard"><div class="row" style="gap:12px;flex-wrap:nowrap"><span class="badge spark">${I.ear}</span><div style="min-width:0"><h3>Entrená el oído</h3><p class="small muted">Escuchás una palabra y elegís cuál fue. Si no oís la diferencia entre «ship» y «sheep», tampoco la vas a poder hacer.</p></div></div>
+        <div class="row"><button class="btn primary" data-oido="mix">${I.play} Empezar ${earAccAll() != null ? `· ${earAccAll()}%` : ""}</button><button class="btn" data-go="dificiles">Palabras difíciles</button></div></section>
       ${SND.GROUPS.map((gr) => `<section class="stack"><h3>${esc(gr.name)}</h3><div class="list">${gr.ids.map((id) => {
         const g = SND.GUIDES[id], a = g.drill ? acc(g.drill) : null;
         return `<button class="item" data-guia="${id}"><span class="badge ipa">${esc(badgeOf(id))}</span><span style="min-width:0"><span class="t">${esc(g.title)}</span><br><span class="s">${esc(g.ex)}</span></span>${a == null ? `<span class="pill">${I.next}</span>` : `<span class="pill ${a >= 75 ? "good" : a >= 50 ? "mid" : "bad"}">${a}%</span>`}</button>`;
@@ -895,11 +903,13 @@
       <section class="card"><h3 id="gstitle">Cómo se hace</h3><ol class="gsteps" id="gsteps"></ol></section>
       <section class="card flat"><h3>Comprobalo</h3><p>${esc(g.check)}</p></section>
       <section class="card flat warnbox"><h3>Lo que solemos hacer</h3><p>${esc(g.error)}</p></section>
+      ${(X.TRICKS[view.id] || []).length ? `<section class="card tricks"><h3>${I.bulb} Trucos para lograrlo</h3>${X.TRICKS[view.id].map((t) => `<div class="trick"><b>${esc(t.t)}</b><p>${esc(t.d)}</p><p class="tw"><button class="mini" data-say="${esc(t.w.replace(/\s*[→·/]\s*/g, ", "))}" aria-label="Escuchar">${I.speaker}</button><button class="mini" data-say="${esc(t.w.replace(/\s*[→·/]\s*/g, ", "))}" data-slow>Lento</button><span>${esc(t.w)}</span></p></div>`).join("")}</section>` : ""}
       <section class="card"><h3>La boca en cámara lenta</h3><p class="small muted">Tocá una palabra: la ves sonido por sonido y la escuchás despacio.</p><div class="wchips">${g.words.map((w) => `<button class="chip" data-slowword="${esc(w)}">${esc(w)}</button>`).join("")}</div></section>
-      <section class="card"><h3>Practicá con el micrófono</h3><div class="stack">
-        ${g.drill ? `<button class="btn primary" data-pdrill="${g.drill}">${I.pairs} Pares de palabras</button>` : ""}
-        <button class="btn${g.drill ? "" : " primary"}" data-act="wdrill">${I.mic} Palabras sueltas</button>
-        ${g.series ? `<button class="btn" data-pserie="${g.series}">${I.text} Frases para leer</button>` : ""}
+      <section class="card"><h3>Practicá en orden</h3><p class="small muted">Primero el oído, después la boca: de la palabra sola a la frase.</p><div class="stack ladder">
+        ${earPairs(view.id) ? `<button class="btn primary" data-oido="${view.id}"><span class="lstep">1</span>${I.ear} Escuchá y elegí${earAcc(view.id) != null ? ` · ${earAcc(view.id)}%` : ""}</button>` : ""}
+        ${g.drill ? `<button class="btn${earPairs(view.id) ? "" : " primary"}" data-pdrill="${g.drill}"><span class="lstep">2</span>${I.pairs} Pares de palabras</button>` : ""}
+        <button class="btn${earPairs(view.id) || g.drill ? "" : " primary"}" data-act="wdrill"><span class="lstep">3</span>${I.mic} Palabras sueltas</button>
+        ${g.series ? `<button class="btn" data-pserie="${g.series}"><span class="lstep">4</span>${I.text} Frases para leer</button>` : ""}
       </div></section></div>`;
     wireNav(view.from || { name: "sonidos" });
     const mo = M.mount($("#gmouth"), { label: "Boca: " + g.title });
@@ -990,16 +1000,33 @@
   const avatar = (name) => `<span class="av av${avIdx(name)}" aria-hidden="true">${esc(String(name).replace(/^(Officer|Ms\.|Mr\.)\s*/, "").charAt(0))}</span>`;
   const PERSONA_TONE = { Alex: "m", Sarah: "f", Nora: "f", Emma: "f", Liam: "m", "Ms. Carter": "f", Tom: "m" };
 
+  const CATS = ["Trabajo", "Viajes", "Ciudad y servicios", "Vida social", "Imprevistos"];
+  const CAT_OF = { meet: "Trabajo", meeting: "Trabajo", interview: "Trabajo", pitch: "Trabajo", disagree: "Trabajo", press: "Trabajo", agency: "Trabajo", dinner: "Trabajo", hotel: "Viajes", airport: "Viajes", street: "Viajes", flight: "Viajes", hotelfix: "Viajes", taxi: "Viajes", cafe: "Ciudad y servicios", phone: "Ciudad y servicios", restaurant: "Ciudad y servicios", pharmacy: "Ciudad y servicios", shop: "Ciudad y servicios", weekend: "Vida social", friend: "Vida social" };
+  const catOf = (sc) => sc.cat || CAT_OF[sc.id] || "Vida social";
+  const LEVELS = ["A2", "A2+", "B1"];
+  let convCat = "Todas";
+
   function vCharla() {
     const best = ST.convs || {};
+    const L = (ST.diags || [])[0];
+    const list = CV.SCENES.filter((sc) => convCat === "Todas" || catOf(sc) === convCat);
+    const lvl = L ? L.level : "A2";
+    const sug = list.filter((sc) => !best[sc.id]).sort((a, b) => Math.abs(LEVELS.indexOf(a.level) - LEVELS.indexOf(lvl)) - Math.abs(LEVELS.indexOf(b.level) - LEVELS.indexOf(lvl)))[0];
+    const row = (sc) => { const b = best[sc.id]; return `<button class="item" data-conv="${sc.id}">${avatar(sc.who.name)}<span style="min-width:0"><span class="t">${esc(sc.title)}</span><br><span class="s">${esc(sc.who.name)} · ${esc(sc.sub)}</span></span>${b ? `<span class="pill ${b.best >= 75 ? "good" : b.best >= 50 ? "mid" : "bad"}">${b.best}%</span>` : `<span class="pill">${esc(sc.level)}</span>`}</button>`; };
+    const groups = (convCat === "Todas" ? CATS : [convCat]).map((c) => [c, list.filter((sc) => catOf(sc) === c)]).filter(([, l]) => l.length);
     app.innerHTML = `<div class="screen stack">${header("Charlá", "Conversación")}
-      <p class="muted">Hablás con personajes en situaciones reales. Te escuchan, te contestan y te marcan lo que conviene corregir.</p>
-      ${[["Trabajo", ["meet", "meeting", "interview", "pitch", "disagree", "press", "agency", "dinner"]], ["Viajes y vida diaria", null]].map(([title, ids], gi, all) => { const used = new Set(all[0][1]); const list = CV.SCENES.filter((sc) => (ids ? ids.includes(sc.id) : !used.has(sc.id))); return `<section class="stack"><h3>${title}</h3><div class="list">${list.map((sc) => { const b = best[sc.id]; return `<button class="item" data-conv="${sc.id}">${avatar(sc.who.name)}<span style="min-width:0"><span class="t">${esc(sc.title)}</span><br><span class="s">${esc(sc.who.name)} · ${esc(sc.sub)}</span></span>${b ? `<span class="pill ${b.best >= 75 ? "good" : b.best >= 50 ? "mid" : "bad"}">${b.best}%</span>` : `<span class="pill">${esc(sc.level)}</span>`}</button>`; }).join("")}</div></section>`; }).join("")}
+      <p class="muted">Hablás con personas en situaciones reales. Te escuchan, te contestan y, al terminar, te dan un diagnóstico con lo que tenés que mejorar para la próxima.</p>
+      ${diagHomeHTML(L)}
+      <div class="cats" role="group" aria-label="Filtrar situaciones">${["Todas"].concat(CATS).map((c) => `<button class="catchip" data-cat="${esc(c)}" aria-pressed="${c === convCat}">${esc(c)}</button>`).join("")}</div>
+      ${sug ? `<section class="card sugcard"><p class="eyebrow">Te sugiero</p><div class="list">${row(sug)}</div></section>` : ""}
+      ${groups.map(([c, l]) => `<section class="stack"><h3>${esc(c)} <span class="tiny">${l.length}</span></h3><div class="list">${l.map(row).join("")}</div></section>`).join("")}
       <section class="card aicard"><div class="row" style="gap:12px;flex-wrap:nowrap"><span class="badge spark">${I.spark}</span><div style="min-width:0"><h3>Charla libre con Claude</h3><p class="small muted">Sin guion: hablás de lo que quieras y te contesta en voz alta.</p></div></div><button class="btn primary" data-go="ia">Elegir tema ${I.next}</button></section>
       <section class="card flat"><h3>Respuesta libre</h3><p class="small muted">Respondé una pregunta durante hasta 30 segundos y mirá qué se entendió.</p><button class="btn sm" data-go="habla">${I.chat} Probar</button></section>
     </div>`;
     wireNav();
     $$("[data-conv]").forEach((b) => (b.onclick = () => go({ name: "conv", id: b.getAttribute("data-conv") })));
+    $$("[data-cat]").forEach((b) => (b.onclick = () => { convCat = b.getAttribute("data-cat"); render(); }));
+    $$("[data-diagopen]").forEach((b) => (b.onclick = () => go({ name: "diag", at: +b.getAttribute("data-diagopen") })));
   }
 
   /* mensajes de una charla (guiada o con Claude) */
@@ -1011,7 +1038,7 @@
     if (m.k === "me") {
       const ws = (m.words || []).filter((w) => w.w && /[a-z]/i.test(w.w));
       const chips = ws.length ? ws.map((w) => `<button class="w ${wordClass(w.s)}" data-word="${esc(w.w)}">${esc(w.w)}</button>`).join("") : `<span>${esc(m.text)}</span>`;
-      return `<div class="msg me"><div class="bub"><div class="words">${chips}</div>${m.ok ? "" : `<p class="small notok">${esc(m.note || "Eso no responde a lo que te preguntó.")}</p>`}${(m.fixes || []).map((f) => `<div class="fix"><b>«${esc(f.from)}» → «${esc(f.to)}»</b><span>${esc(f.why)}</span>${f.to.indexOf("…") < 0 ? `<button class="mini" data-say="${esc(f.to)}" aria-label="Escuchar la corrección">${I.speaker}</button>` : ""}</div>`).join("")}${m.aiFix ? `<div class="fix"><span>${esc(m.aiFix)}</span></div>` : ""}</div></div>`;
+      return `<div class="msg me"><div class="bub"><div class="words">${chips}</div>${m.ok ? "" : `<p class="small notok">${esc(m.note || "Eso no responde a lo que te preguntó.")}</p>`}${(m.fixes || []).map((f) => `<div class="fix"><b>«${esc(f.from)}» → «${esc(f.to)}»</b><span>${esc(f.why)}</span>${f.to.indexOf("…") < 0 ? `<button class="mini" data-say="${esc(f.to)}" aria-label="Escuchar la corrección">${I.speaker}</button>` : ""}</div>`).join("")}${m.aiFix ? `<div class="fix"><span>${esc(m.aiFix)}</span></div>` : ""}${m.up ? `<div class="fix up"><b>Más completa: «${esc(m.up)}»</b><span>Se entendió, pero una frase entera suena más natural.</span><div class="row tight"><button class="mini" data-say="${esc(m.up)}" aria-label="Escuchar">${I.speaker}</button><button class="mini acc" data-decir="${esc(m.up)}">${I.mic} Decila</button></div></div>` : ""}</div></div>`;
     }
     if (m.k === "note") return `<p class="lognote">${esc(m.text)}</p>`;
     if (m.k === "html") return m.html;
@@ -1051,7 +1078,7 @@
   }
   function convStart(id) {
     const sc = CV.SCENES.find((x) => x.id === id) || CV.SCENES[0];
-    CONV = { sc, turn: sc.start, attempt: 0, slots: {}, scores: [], fixes: [], low: [], started: false, done: false, log: [] };
+    CONV = { sc, turn: sc.start, attempt: 0, slots: {}, scores: [], fixes: [], low: [], started: false, done: false, log: [], turns: [], help: 0, repairs: 0, t0: Date.now() };
   }
   const voiceOf = (sc) => ({ tone: sc.who.tone, accent: sc.who.accent });
   function addC(m) { CONV.log.push(m); appendMsg(m); return m; }
@@ -1066,12 +1093,13 @@
     wireNav({ name: "charla" });
     $("[data-act=restart]").onclick = () => { convStart(sc.id); render(); };
     my.log.forEach((m) => appendMsg(m, false));
+    $$("[data-diag]").forEach((el) => bindDiag(el));
     onLeave(() => { TTS.stop(); if (Mic.state === "rec") Mic.stop(); });
     if (!my.started) dockIntro(); else if (my.done) dockDone(); else dockTurn();
   }
   function dockIntro() {
     const sc = CONV.sc;
-    $("#dock").innerHTML = `<p class="small">${esc(sc.intro)}</p><p class="tiny">Escuchá a ${esc(sc.who.name)} y respondé con el micrófono. Si no entendés, podés decir «Sorry, can you repeat?».</p><button class="btn primary" data-act="go">${I.play} Empezar la charla</button>`;
+    $("#dock").innerHTML = `<p class="small">${esc(sc.intro)}</p>${ST.goal ? `<p class="goal">${I.bulb} <span><b>Tu objetivo en esta charla:</b> ${esc(ST.goal.text)}</span></p>` : ""}<p class="tiny">Escuchá a ${esc(sc.who.name)} y respondé con el micrófono. Si no entendés, podés decir «Sorry, can you repeat?».</p><button class="btn primary" data-act="go">${I.play} Empezar la charla</button>`;
     $("[data-act=go]").onclick = () => { CONV.started = true; Eng.start(); partnerTurn(CONV.turn); };
   }
   function dockListening(sess, name) {
@@ -1089,15 +1117,15 @@
       <div class="hints" id="hints">${a >= 1 ? hintHTML(t) : ""}${a >= 2 ? modelHTML(t) : ""}</div>
       <div class="dockrow"><div class="micwrap sm"><div class="micring" id="ring"></div><button class="mic sm" id="mic" aria-label="Responder">${I.mic}</button></div>
         <div class="grow"><div class="miclabel left" id="miclabel">Tocá y respondé</div><div class="row tight">${a < 1 ? `<button class="btn sm ghost" data-act="hint">${I.bulb} Pista</button>` : ""}${a < 2 ? `<button class="btn sm ghost" data-act="model">Ejemplo</button>` : ""}${a >= 3 ? `<button class="btn sm" data-act="skip">Seguir ${I.next}</button>` : ""}</div></div></div>`;
-    const hb = $("[data-act=hint]"); if (hb) hb.onclick = () => { $("#hints").insertAdjacentHTML("afterbegin", hintHTML(t)); hb.remove(); };
-    const mb = $("[data-act=model]"); if (mb) mb.onclick = () => { $("#hints").insertAdjacentHTML("beforeend", modelHTML(t)); bindCommon($("#hints")); mb.remove(); };
-    const sk = $("[data-act=skip]"); if (sk) sk.onclick = () => { CONV.scores.push(0); partnerTurn(t.next, "No worries."); };
+    const hb = $("[data-act=hint]"); if (hb) hb.onclick = () => { CONV.help = Math.max(CONV.help || 0, 1); $("#hints").insertAdjacentHTML("afterbegin", hintHTML(t)); hb.remove(); };
+    const mb = $("[data-act=model]"); if (mb) mb.onclick = () => { CONV.help = 2; $("#hints").insertAdjacentHTML("beforeend", modelHTML(t)); bindCommon($("#hints")); mb.remove(); };
+    const sk = $("[data-act=skip]"); if (sk) sk.onclick = () => { CONV.scores.push(0); CONV.turns.push({ key: CONV.turn, you: t.you, skipped: true, model: t.model || [] }); partnerTurn(t.next, "No worries."); };
     bindCommon(d);
     bindStage("conv", convAudio, "Tocá y respondé");
   }
   async function partnerTurn(id, pre) {
     const my = CONV; if (!my) return;
-    my.turn = id; my.attempt = 0;
+    my.turn = id; my.attempt = 0; my.help = 0;
     const t = my.sc.turns[id];
     const text = ((pre ? pre + " " : "") + fillT(t.say)).trim();
     addC({ k: "them", text, es: t.es, who: my.sc.who.name, tone: my.sc.who.tone, accent: my.sc.who.accent });
@@ -1125,7 +1153,10 @@
     const fixes = findFixes(r.text);
     words.filter((w) => w.s < 40).forEach((w) => { const c = cleanW(w.w); if (c && !my.low.includes(c)) my.low.push(c); });
     fixes.forEach((f) => { if (!my.fixes.some((x) => x.to === f.to)) my.fixes.push(f); });
+    const rec = { key: my.turn, you: t.you, text: r.text, words: words.map((w) => ({ w: w.w, s: w.s })), nW, avg, wpm: r.wpm || 0, pauses: r.pauses || 0, secs: r.seconds || 0, ok, attempt: my.attempt, help: my.help || 0, fixes, model: t.model || [], repair: false };
+    my.turns.push(rec);
     if (!ok && nW <= 6 && CV.REPAIR.test(r.text)) {
+      rec.repair = true; my.repairs++;
       addC({ k: "me", words, text: r.text, ok: true, fixes });
       addC({ k: "note", text: "Le pediste que repita: eso también es conversar." });
       const text = "Sure. " + fillT(t.say);
@@ -1135,7 +1166,8 @@
       if (CONV === my && $("#dock")) dockTurn();
       return;
     }
-    addC({ k: "me", words, text: r.text, ok, fixes, note: plausible ? "Eso no responde a lo que te preguntó." : "No se entendió bien. Probá de nuevo, más claro." });
+    const upM = ok && nW < 5 && !fixes.length && t.model ? bestModel(r.text, t.model) : "";
+    addC({ k: "me", words, text: r.text, ok, fixes, up: upM && normText(upM) !== nrm ? upM : "", note: plausible ? "Eso no responde a lo que te preguntó." : "No se entendió bien. Probá de nuevo, más claro." });
     if (ok) {
       if (t.slot) for (const k in t.slot) { const m = both.match(t.slot[k]); const v = m && (m[1] || m[2]); if (v && !(k === "name" && CV.NOT_NAME.test(v))) my.slots[k] = titleCase(v.trim()); }
       my.scores.push(my.attempt === 0 ? 1 : my.attempt === 1 ? 0.6 : 0.3);
@@ -1173,7 +1205,14 @@
     const first = my.scores.filter((x) => x === 1).length;
     const all = (ST.convs = ST.convs || {}); const cs = all[sc.id] || (all[sc.id] = { best: 0, n: 0 }); cs.n++; cs.best = Math.max(cs.best, score); cs.last = score;
     logHist("conv", score, { id: sc.id });
-    addC({ k: "html", html: summaryHTML("Charla terminada", score, first, n, my.fixes, my.low) });
+    const prev = (ST.diags || [])[0] || null;
+    const d = diagnose(my);
+    ST.diags = [d].concat(ST.diags || []).slice(0, 40);
+    if (d.focus[0]) ST.goal = { key: d.focus[0].key, text: d.focus[0].goal, from: d.m[d.focus[0].key === "gram" ? "errRate" : METRIC_OF[d.focus[0].key]], at: d.at };
+    save();
+    my.diagAt = d.at;
+    addC({ k: "html", html: diagHTML(d, prev) });
+    const el = $("#log") && $("#log").lastElementChild; if (el) bindDiag(el);
     dockDone();
   }
   function dockDone() {
@@ -1181,6 +1220,255 @@
     d.innerHTML = `<div class="row"><button class="btn primary" data-act="again">${I.retry} Otra vez</button><button class="btn" data-act="other">Otra charla</button></div>`;
     $("[data-act=again]").onclick = () => { const id = CONV.sc.id; convStart(id); render(); };
     $("[data-act=other]").onclick = () => go({ name: "charla" });
+  }
+
+  /* ---------- DIAGNÓSTICO DE LA CHARLA ---------- */
+  const DIMS = [["compr", "Comprensión"], ["flu", "Fluidez"], ["gram", "Gramática"], ["pron", "Pronunciación"], ["des", "Respuestas"]];
+  const METRIC_OF = { compr: "compr", flu: "wpm", gram: "errRate", pron: "clarity", des: "avgLen" };
+  const clamp = (x) => Math.max(0, Math.min(100, Math.round(x)));
+  const CONNECT = /\b(and|but|because|so|also|then|actually|maybe|i think|well|however|although|for example|that'?s why|by the way|anyway)\b/g;
+  const STOPW = new Set("a an the i you it is am are to of and or for in on at please thanks thank yes no my your me".split(" "));
+  function bestModel(text, models) {
+    const mine = new Set(normText(text).trim().split(" ").filter((w) => w && !STOPW.has(w)));
+    let best = "", bs = -1;
+    (models || []).forEach((m) => { const ws = normText(m).trim().split(" "); const hit = ws.filter((w) => mine.has(w)).length; const sc = hit * 100 + Math.min(m.length, 90); if (sc > bs) { bs = sc; best = m; } });
+    return best;
+  }
+  function applyFixes(text, fixes) {
+    let t = String(text);
+    (fixes || []).forEach((f) => { if (f.to.indexOf("…") < 0) { const i = t.toLowerCase().indexOf(String(f.from).toLowerCase()); if (i >= 0) t = t.slice(0, i) + f.to + t.slice(i + f.from.length); } });
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  function diagnose(my) {
+    const sc = my.sc, all = my.turns || [];
+    const ans = all.filter((x) => !x.repair && !x.skipped);
+    const finals = ans.filter((x, i) => x.ok || !ans.slice(i + 1).some((y) => y.key === x.key));
+    const skips = all.filter((x) => x.skipped).length;
+    // comprensión: respondió lo pedido, a la primera y sin ayuda
+    let cs = 0; finals.forEach((x) => { const base = x.ok ? (x.attempt === 0 ? 1 : x.attempt === 1 ? 0.6 : 0.3) : 0; cs += base * (x.help >= 2 ? 0.75 : x.help === 1 ? 0.9 : 1); });
+    const nT = finals.length + skips;
+    const compr = nT ? clamp((100 * cs) / nT) : 0;
+    // palabras y claridad
+    const words = [].concat(...ans.map((x) => x.words || []));
+    const W = ans.reduce((a, x) => a + (x.nW || 0), 0);
+    const clarity = words.length ? words.reduce((a, w) => a + (w.s || 0), 0) / words.length : 0;
+    const lowShare = words.length ? words.filter((w) => w.s < 40).length / words.length : 0;
+    const pron = words.length ? clamp(((clarity - 40) / 48) * 100 - lowShare * 40) : 0;
+    // fluidez: velocidad al hablar y pausas largas
+    const sp = ans.filter((x) => x.secs >= 1 && x.wpm > 0).map((x) => x.wpm).sort((a, b) => a - b);
+    const wpm = sp.length ? sp[Math.floor(sp.length / 2)] : 0;
+    const pz = ans.length ? ans.reduce((a, x) => a + (x.pauses || 0), 0) / ans.length : 0;
+    const flu = sp.length ? clamp(((wpm - 45) / 70) * 100 - Math.max(0, pz - 0.5) * 14) : 40;
+    // gramática: errores típicos cada 100 palabras
+    const nFix = (my.fixes || []).length;
+    const errRate = W ? (nFix / W) * 100 : 0;
+    const gram = W < 8 ? (nFix ? 55 : 72) : clamp(Math.max(nFix === 1 ? 45 : 20, 100 - errRate * 9));
+    // respuestas completas: largo promedio y conectores
+    const okF = finals.filter((x) => x.ok);
+    const avgLen = okF.length ? okF.reduce((a, x) => a + x.nW, 0) / okF.length : 0;
+    const txt = ans.map((x) => " " + String(x.text || "").toLowerCase() + " ").join(" ");
+    const conns = Array.from(new Set((txt.match(CONNECT) || []).map((c) => c.trim())));
+    const des = clamp(((avgLen - 2) / 8) * 100 + Math.min(15, conns.length * 5));
+    const dims = { compr, flu, gram, pron, des };
+    const overall = Math.round(0.22 * compr + 0.18 * flu + 0.2 * gram + 0.2 * pron + 0.2 * des);
+    const LV = ["A2", "A2+", "B1", "B1+", "B2"];
+    let li = overall < 35 ? 0 : overall < 50 ? 1 : overall < 65 ? 2 : overall < 80 ? 3 : 4;
+    if (avgLen < 4) li = Math.min(li, 1); else if (avgLen < 6) li = Math.min(li, 2);
+    const level = LV[li];
+    const m = { compr, wpm, pz: +pz.toFixed(1), clarity: Math.round(clarity), errRate: +errRate.toFixed(1), avgLen: +avgLen.toFixed(1), W, nFix, conns, helps: finals.filter((x) => x.help).length, retries: finals.filter((x) => x.attempt > 0).length, repairs: my.repairs || 0, skips };
+    // lo que salió bien
+    const GOOD = { compr: "Entendiste lo que te preguntaban y respondiste a eso.", flu: "Hablaste con buen ritmo, sin cortarte.", gram: "Casi no hubo errores de gramática.", pron: "Tus palabras se entendieron con claridad.", des: "Diste respuestas completas, con detalles." };
+    const strengths = DIMS.map(([k]) => k).filter((k) => dims[k] >= 72).sort((a, b) => dims[b] - dims[a]).slice(0, 2).map((k) => GOOD[k]);
+    if (m.repairs) strengths.push("Cuando no entendiste, pediste que te repitan en inglés. Eso es conversar de verdad.");
+    if (!strengths.length) strengths.push("Terminaste la charla entera. Eso ya es practicar en serio.");
+    // para la próxima
+    const names = new Set(Object.values(my.slots || {}).map((v) => cleanW(v)).concat(["maxi", "defranchi"]));
+    const lowW = Array.from(new Set(words.filter((w) => w.s < 45).map((w) => cleanW(w.w)).filter((w) => w.length > 1 && !names.has(w) && !/\d/.test(w)))).slice(0, 8);
+    const guides = []; lowW.forEach((w) => { const g = guideForWord(w); if (g && !guides.includes(g)) guides.push(g); });
+    const shortOne = okF.filter((x) => x.nW < 6 && x.model && x.model.length).sort((a, b) => a.nW - b.nW)[0];
+    const longest = (arr) => (arr || []).slice().sort((a, b) => b.length - a.length)[0] || "";
+    const F = {
+      des: { key: "des", title: "Respuestas más completas", goal: "respuestas de 8 palabras o más", text: `Tus respuestas tuvieron ${m.avgLen} palabras en promedio. Apuntá a 8 o más: respondé, sumá un detalle y, si podés, devolvé una pregunta («And you?»).${conns.length < 2 ? " Usá conectores: and, but, because, so." : ""}`, ex: shortOne ? { said: shortOne.text, better: bestModel(shortOne.text, shortOne.model) } : null },
+      flu: { key: "flu", title: "Más fluidez", goal: "hablar sin cortarte, ganando tiempo con «Well…»", text: `${wpm ? `Hablaste a ${wpm} palabras por minuto` : "Hablaste poco"}${pz >= 0.8 ? ` y hiciste ${m.pz} pausas largas por respuesta` : ""}. Para no quedarte en silencio, usá frases para ganar tiempo: «Well…», «Let me think…», «That's a good question». Repetí frases en voz alta para soltar el ritmo.`, act: `<button class="btn sm" data-go="repeti">${I.repeat} Practicar en Repetí</button>` },
+      gram: { key: "gram", title: "Gramática", goal: (my.fixes[0] ? `decir bien «${my.fixes[0].to}»` : "cuidar la gramática"), text: my.fixes.length ? "Estos errores aparecieron en la charla. Decí la versión correcta en voz alta tres veces." : "No apareció ningún error típico, pero el reconocedor a veces corrige solo. Para una revisión a fondo, llevá la charla a Claude.", fixes: my.fixes.slice(0, 3) },
+      pron: { key: "pron", title: "Pronunciación", goal: guides[0] ? `cuidar el sonido de ${SND.GUIDES[guides[0]].title}` : "pronunciar claro cada palabra", text: lowW.length ? `Al reconocedor le costó entender: ${lowW.slice(0, 6).join(", ")}. Tocá cada palabra para ver la boca en cámara lenta${guides.length ? " y practicá el sonido que más se repite" : ""}.` : "Tus palabras se entendieron bien. Seguí cuidando los finales de palabra.", words: lowW, guides: guides.slice(0, 2) },
+      compr: { key: "compr", title: "Comprensión", goal: "entender a la primera, sin pistas", text: `${m.retries ? `En ${m.retries} ${m.retries === 1 ? "pregunta" : "preguntas"} necesitaste más de un intento` : "Respondiste casi todo a la primera"}${m.helps ? ` y usaste pistas en ${m.helps}` : ""}. Entrená el oído y probá la próxima charla con «Solo escuchar» (en Progreso). Si no entendés, pedí: «Sorry, could you say that again?».`, act: `<button class="btn sm" data-oido="mix">${I.ear} Entrenar el oído</button>` }
+    };
+    let focus = DIMS.map(([k]) => k).filter((k) => dims[k] < 80).sort((a, b) => dims[a] - dims[b]).slice(0, 3).map((k) => F[k]);
+    if (!focus.length) focus = [{ key: "des", title: "Subí la dificultad", goal: "probar una charla de nivel B1", text: "Esta charla te quedó cómoda. Probá una de nivel B1 o la charla libre con Claude." }];
+    const better = finals.filter((x) => !x.ok || (x.fixes && x.fixes.length) || x.nW < 5).slice(0, 4).map((x) => ({ said: x.text, better: x.fixes && x.fixes.length && x.ok ? applyFixes(x.text, x.fixes) : bestModel(x.text, x.model), why: !x.ok ? "No respondía a la pregunta" : x.fixes && x.fixes.length ? "Corregida" : "Más completa" })).filter((b) => b.better && b.better !== b.said);
+    // ¿cumplió el objetivo anterior?
+    let goalCheck = null;
+    if (ST.goal && ST.goal.key && ST.goal.from != null) {
+      const k = ST.goal.key, mk = METRIC_OF[k], now = k === "gram" ? m.errRate : m[mk], before = ST.goal.from;
+      const better2 = k === "gram" ? now <= before : now > before;
+      const fmt = (v) => (k === "flu" ? v + " palabras/min" : k === "des" ? v + " palabras" : k === "gram" ? v + " errores c/100 palabras" : k === "pron" ? v + " de claridad" : v + " %");
+      goalCheck = { text: ST.goal.text, before: fmt(before), now: fmt(now), ok: better2 };
+    }
+    return { at: Date.now(), id: sc.id, title: sc.title, who: sc.who.name, overall, level, dims, m, strengths, focus, better, low: lowW, goalCheck, mins: Math.max(1, Math.round((Date.now() - (my.t0 || Date.now())) / 60000)) };
+  }
+  function sparkSVG(vals) {
+    if (vals.length < 2) return "";
+    const w = 280, h = 64, n = vals.length, x = (i) => 8 + (i * (w - 16)) / (n - 1), y = (v) => h - 8 - (v / 100) * (h - 16);
+    const pts = vals.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+    return `<svg class="sparkline" viewBox="0 0 ${w} ${h}" role="img" aria-label="Evolución de tus puntajes"><line x1="8" x2="${w - 8}" y1="${y(50)}" y2="${y(50)}" class="sgrid"/><polyline points="${pts}" class="sline"/>${vals.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${i === n - 1 ? 4.5 : 2.5}" class="${i === n - 1 ? "slast" : "sdot"}"/>`).join("")}<text x="${(x(n - 1) - 8).toFixed(1)}" y="${Math.max(13, y(vals[n - 1]) - 8).toFixed(1)}" text-anchor="end" class="stxt">${vals[n - 1]}</text></svg>`;
+  }
+  const dimCls = (v) => (v >= 75 ? "good" : v >= 50 ? "mid" : "bad");
+  function deltaHTML(a, b) { if (b == null) return ""; const d = a - b; return d ? `<span class="dd ${d > 0 ? "up" : "down"}">${d > 0 ? "▲" : "▼"} ${Math.abs(d)}</span>` : `<span class="dd">=</span>`; }
+  function diagHTML(d, prev) {
+    const hist = (ST.diags || []).slice(0, 10).map((x) => x.overall).reverse();
+    return `<section class="card diag" data-diag="${d.at}">
+      <p class="eyebrow">Diagnóstico · ${esc(d.title)}</p>
+      <div class="dtop"><div class="dscore ${dimCls(d.overall)}"><b>${d.overall}</b><span>de 100</span></div>
+        <div class="grow"><p class="dlevel">Nivel estimado en esta charla: <b>${esc(d.level)}</b></p><p class="small muted">${prev ? `Charla anterior: ${prev.overall} ${deltaHTML(d.overall, prev.overall)}` : "Es tu primer diagnóstico: la próxima charla la comparo con esta."}</p></div></div>
+      ${d.goalCheck ? `<div class="goalchk ${d.goalCheck.ok ? "good" : "mid"}"><b>${d.goalCheck.ok ? "Objetivo cumplido" : "Objetivo en camino"}</b><span>${esc(d.goalCheck.text)}: antes ${esc(String(d.goalCheck.before))}, ahora ${esc(String(d.goalCheck.now))}.</span></div>` : ""}
+      <div class="dims">${DIMS.map(([k, l]) => `<div class="dim"><span class="dl">${l}</span><div class="meter"><i class="${dimCls(d.dims[k])}" style="width:${Math.max(3, d.dims[k])}%"></i></div><b>${d.dims[k]}</b>${deltaHTML(d.dims[k], prev && prev.dims ? prev.dims[k] : null)}</div>`).join("")}</div>
+      <div class="dnums"><span><b>${d.m.wpm || "–"}</b> palabras/min</span><span><b>${d.m.avgLen}</b> palabras por respuesta</span><span><b>${d.m.nFix}</b> errores típicos</span><span><b>${d.m.clarity}</b> de claridad</span></div>
+      <div class="stack"><h3>Lo que salió bien</h3><ul class="dlist good">${d.strengths.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>
+      <div class="stack"><h3>Para la próxima charla</h3><ol class="focus">${d.focus.map((f) => `<li><b>${esc(f.title)}</b><span>${esc(f.text)}</span>
+        ${f.ex ? `<div class="better"><p class="said">Dijiste: «${esc(f.ex.said)}»</p><p class="bt">Mejor: «${esc(f.ex.better)}»</p><div class="row tight"><button class="mini" data-say="${esc(f.ex.better)}">${I.speaker}</button><button class="mini" data-say="${esc(f.ex.better)}" data-slow>Lento</button><button class="mini acc" data-decir="${esc(f.ex.better)}">${I.mic} Decilo</button></div></div>` : ""}
+        ${(f.fixes || []).map((x) => `<div class="fix"><b>«${esc(x.from)}» → «${esc(x.to)}»</b><span>${esc(x.why)}</span>${x.to.indexOf("…") < 0 ? `<div class="row tight"><button class="mini" data-say="${esc(x.to)}">${I.speaker}</button><button class="mini acc" data-decir="${esc(x.to)}">${I.mic} Decilo</button></div>` : ""}</div>`).join("")}
+        ${(f.words || []).length ? `<div class="wchips">${f.words.slice(0, 6).map((w) => `<button class="chip" data-word="${esc(w)}">${I.mouth} ${esc(w)}</button>`).join("")}</div>` : ""}
+        ${(f.guides || []).length ? `<div class="row tight">${f.guides.map((g) => `<button class="btn sm" data-guide="${g}">${I.mouth} ${esc(SND.GUIDES[g].title)}</button>${earPairs(g) ? `<button class="btn sm ghost" data-oido="${g}">${I.ear} Oído</button>` : ""}`).join("")}</div>` : ""}
+        ${f.act ? `<div class="row tight">${f.act}</div>` : ""}</li>`).join("")}</ol>
+        ${d.focus[0] ? `<p class="goal">${I.bulb} <span><b>Tu objetivo para la próxima:</b> ${esc(d.focus[0].goal)}. Te lo recuerdo al empezar.</span></p>` : ""}</div>
+      ${d.better.length ? `<div class="stack"><h3>Tus respuestas, mejoradas</h3>${d.better.map((b) => `<div class="better"><p class="said">Dijiste: «${esc(b.said)}»</p><p class="bt">${esc(b.why)}: «${esc(b.better)}»</p><div class="row tight"><button class="mini" data-say="${esc(b.better)}">${I.speaker}</button><button class="mini" data-say="${esc(b.better)}" data-slow>Lento</button><button class="mini acc" data-decir="${esc(b.better)}">${I.mic} Decilo</button></div></div>`).join("")}</div>` : ""}
+      ${hist.length > 1 ? `<div class="stack"><h3>Tu evolución</h3>${sparkSVG(hist)}<p class="tiny">Puntaje de tus últimas ${hist.length} charlas.</p></div>` : ""}
+      <div class="row"><button class="btn sm" data-act="copydiag">${I.copy} Llevar la charla a Claude</button></div>
+    </section>`;
+  }
+  function diagHomeHTML(L) {
+    if (!L) return `<section class="card diaghome"><div class="row" style="gap:12px;flex-wrap:nowrap"><span class="badge spark">${I.chart}</span><div style="min-width:0"><h3>Tu diagnóstico</h3><p class="small muted">Al terminar cada charla te muestro cómo te fue en comprensión, fluidez, gramática, pronunciación y respuestas completas, con un objetivo concreto para la siguiente.</p></div></div></section>`;
+    const hist = (ST.diags || []).slice(0, 10).map((x) => x.overall).reverse();
+    return `<section class="card diaghome">
+      <div class="dtop"><div class="dscore sm ${dimCls(L.overall)}"><b>${L.overall}</b></div><div class="grow"><p class="small"><b>Última charla:</b> ${esc(L.title)}</p><p class="tiny">Nivel estimado ${esc(L.level)} · ${(ST.diags || []).length} ${(ST.diags || []).length === 1 ? "charla" : "charlas"} con diagnóstico</p></div><button class="btn sm" data-diagopen="${L.at}">Ver</button></div>
+      <div class="dims mini">${DIMS.map(([k, l]) => `<div class="dim"><span class="dl">${l}</span><div class="meter"><i class="${dimCls(L.dims[k])}" style="width:${Math.max(3, L.dims[k])}%"></i></div><b>${L.dims[k]}</b></div>`).join("")}</div>
+      ${ST.goal ? `<p class="goal">${I.bulb} <span><b>Objetivo para la próxima:</b> ${esc(ST.goal.text)}</span></p>` : ""}
+      ${hist.length > 1 ? sparkSVG(hist) : ""}
+    </section>`;
+  }
+  function diagPrompt(d) {
+    const my = CONV && CONV.diagAt === d.at ? CONV : null;
+    const lines = my ? my.log.filter((x) => x.k === "them" || x.k === "me").map((x) => (x.k === "them" ? `${my.sc.who.name}: ${x.text}` : `Yo: ${x.text}`)).join("\n") : "";
+    return `Practiqué una conversación en inglés por voz (situación: ${d.title}). Soy hispanohablante, nivel A2+/B1. Mis frases son una transcripción automática de mi voz, así que puede haber errores del reconocedor.\n\n${lines ? lines + "\n\n" : ""}Mi diagnóstico automático: ${d.overall}/100 (comprensión ${d.dims.compr}, fluidez ${d.dims.flu}, gramática ${d.dims.gram}, pronunciación ${d.dims.pron}, respuestas completas ${d.dims.des}).\n\nRevisá mis respuestas una por una: marcame los errores de gramática y vocabulario, decime cómo lo diría un nativo y dame 3 consejos concretos para mi próxima conversación.`;
+  }
+  function bindDiag(el) {
+    if (!el) return;
+    bindCommon(el);
+    const at = +el.getAttribute("data-diag") || (el.querySelector("[data-diag]") && +el.querySelector("[data-diag]").getAttribute("data-diag"));
+    const d = (ST.diags || []).find((x) => x.at === at);
+    $$("[data-go]", el).forEach((b) => (b.onclick = () => go({ name: b.getAttribute("data-go") })));
+    const cb = el.querySelector("[data-act=copydiag]");
+    if (cb && d) cb.onclick = async () => { try { await navigator.clipboard.writeText(diagPrompt(d)); toast("Copiado. Pegalo en Claude."); } catch (e) { toast("No se pudo copiar."); } };
+  }
+  function vDiag() {
+    const ds = ST.diags || [];
+    const i = Math.max(0, ds.findIndex((x) => x.at === view.at));
+    const d = ds[i];
+    if (!d) { go({ name: "charla" }); return; }
+    app.innerHTML = `<div class="screen stack">${header("Diagnóstico", new Date(d.at).toLocaleDateString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }), true)}
+      ${diagHTML(d, ds[i + 1] || null)}
+      <div class="row"><button class="btn primary" data-conv="${d.id}">${I.retry} Repetir esta charla</button></div>
+      ${ds.length > 1 ? `<section class="stack"><h3>Historial</h3><div class="list">${ds.slice(0, 15).map((x) => `<button class="item" data-diagopen="${x.at}"><span class="badge">${x.overall}</span><span style="min-width:0"><span class="t">${esc(x.title)}</span><br><span class="s">${new Date(x.at).toLocaleDateString("es-AR", { day: "numeric", month: "short" })} · nivel ${esc(x.level)}</span></span>${I.next}</button>`).join("")}</div></section>` : ""}
+    </div>`;
+    wireNav({ name: "charla" });
+    bindDiag($("[data-diag]"));
+    $$("[data-conv]").forEach((b) => (b.onclick = () => { convStart(b.getAttribute("data-conv")); go({ name: "conv", id: b.getAttribute("data-conv") }); }));
+    $$("[data-diagopen]").forEach((b) => (b.onclick = () => go({ name: "diag", at: +b.getAttribute("data-diagopen") })));
+  }
+
+  /* ---------- ENTRENAR EL OÍDO ---------- */
+  function earPairs(gid) {
+    const g = SND.GUIDES[gid];
+    if (g && g.drill) { const c = D.CONTRASTS.find((x) => x.id === g.drill); if (c && c.pairs.length) return c.pairs; }
+    return X.EAR[gid] || null;
+  }
+  function earAcc(k) { const s = ST.ear && ST.ear[k]; if (!s || !s.recent.length) return null; return Math.round((100 * s.recent.reduce((a, b) => a + b, 0)) / s.recent.length); }
+  function earAccAll() { const ks = Object.keys(ST.ear || {}).filter((k) => earAcc(k) != null); if (!ks.length) return null; return Math.round(ks.reduce((a, k) => a + earAcc(k), 0) / ks.length); }
+  const EAR_IDS = () => Object.keys(SND.GUIDES).filter((id) => earPairs(id));
+  function newEarRound(gid) {
+    const ids = gid === "mix" ? EAR_IDS().sort((a, b) => (earAcc(a) == null ? 55 : earAcc(a)) - (earAcc(b) == null ? 55 : earAcc(b))).slice(0, 5) : [gid];
+    const items = [];
+    for (let i = 0; i < 10; i++) {
+      const id = ids[i % ids.length], pr = pick(earPairs(id)), t = Math.random() < 0.5 ? 0 : 1;
+      items.push({ id, a: pr[0], b: pr[1], target: pr[t], other: pr[1 - t], order: Math.random() < 0.5, voice: { tone: Math.random() < 0.5 ? "f" : "m", accent: Math.random() < 0.6 ? "US" : "UK" } });
+    }
+    return { gid, items: shuffle(items), i: 0, res: [], picked: null };
+  }
+  function vOido() {
+    if (!view.round || view.round.gid !== view.id) view.round = newEarRound(view.id);
+    const R = view.round, it = R.items[R.i], g = SND.GUIDES[view.id];
+    const title = view.id === "mix" ? "Entrená el oído" : g ? g.title : "Oído";
+    const back = view.from && view.from.name !== "oido" ? view.from : { name: "sonidos" };
+    if (!it) {
+      const ok = R.res.filter(Boolean).length;
+      const per = {}; R.items.forEach((x, i) => { (per[x.id] = per[x.id] || [0, 0]); per[x.id][1]++; if (R.res[i]) per[x.id][0]++; });
+      const misses = R.items.filter((x, i) => !R.res[i]);
+      app.innerHTML = `<div class="screen stack">${header(title, "Resultado", true)}
+        <section class="card"><p class="score">${ok}<small> /${R.items.length}</small></p><p class="muted">palabras reconocidas de oído</p>
+        <div class="bars">${Object.keys(per).map((k) => `<div class="bar"><div class="stack" style="gap:4px"><div class="lbl"><span>${esc(SND.GUIDES[k].title)}</span><span class="muted">${per[k][0]}/${per[k][1]}</span></div><div class="meter"><i class="${dimCls((100 * per[k][0]) / per[k][1])}" style="width:${Math.max(4, (100 * per[k][0]) / per[k][1])}%"></i></div></div><b style="text-align:right">${earAcc(k) == null ? "–" : earAcc(k) + "%"}</b></div>`).join("")}</div>
+        ${misses.length ? `<div class="stack"><h3>Las que confundiste</h3><div class="wchips">${misses.map((x) => `<button class="chip" data-say="${esc(x.target)}. ${esc(x.other)}." data-slow>${I.speaker} ${esc(x.target)} / ${esc(x.other)}</button>`).join("")}</div><p class="tiny">Tocá un par para escucharlo despacio, primero la que sonó.</p></div>` : `<div class="verdict good"><strong>Oído afinado</strong><span>No confundiste ninguna.</span></div>`}
+        <div class="row"><button class="btn primary" data-act="again">${I.retry} Otra ronda</button>${g ? `<button class="btn" data-guide="${view.id}">${I.mouth} Cómo se hace</button>` : `<button class="btn" data-go="sonidos">Sonidos</button>`}</div></section></div>`;
+      wireNav(back);
+      $("[data-act=again]").onclick = () => { view.round = newEarRound(view.id); render(); };
+      return;
+    }
+    const opts = it.order ? [it.a, it.b] : [it.b, it.a];
+    const gg = SND.GUIDES[it.id];
+    app.innerHTML = `<div class="screen stack">${header(title, (R.i + 1) + " de " + R.items.length, true)}
+      <div class="dots">${R.items.map((_, i) => `<i class="${i < R.i ? (R.res[i] ? "done" : "miss") : i === R.i ? "on" : ""}"></i>`).join("")}</div>
+      <section class="card ear"><p class="eyebrow">${esc(gg.title)}</p><p class="hint">¿Qué palabra escuchaste?</p>
+        <div class="row" style="justify-content:center"><button class="btn primary" data-act="play">${I.speaker} Escuchar</button><button class="btn" data-act="slow">Más lento</button></div>
+        <div class="earopts">${opts.map((w) => `<button class="earbtn" data-pickw="${esc(w)}">${esc(w)}</button>`).join("")}</div>
+        <div id="earres" class="stack" hidden></div></section>
+      <details class="card flat"><summary class="small" style="cursor:pointer;font-weight:700">Cómo se distinguen</summary><p class="small muted" style="margin-top:8px">${esc(gg.error)}</p><button class="btn sm ghost" data-guide="${it.id}" style="margin-top:8px">${I.mouth} Ver la boca</button></details></div>`;
+    wireNav(back);
+    const play = (slow) => TTS.say(it.target, slow ? 0.6 : null, it.voice);
+    $("[data-act=play]").onclick = () => play(false);
+    $("[data-act=slow]").onclick = () => play(true);
+    $$("[data-pickw]").forEach((b) => (b.onclick = () => {
+      if (R.picked != null) return;
+      const ok = b.getAttribute("data-pickw") === it.target; R.picked = ok; R.res[R.i] = ok;
+      ST.ear = ST.ear || {}; const st = ST.ear[it.id] || (ST.ear[it.id] = { n: 0, ok: 0, recent: [] }); st.n++; if (ok) st.ok++; st.recent.push(ok ? 1 : 0); st.recent = st.recent.slice(-20); markDay(); save();
+      $$("[data-pickw]").forEach((x) => { x.disabled = true; x.classList.add(x.getAttribute("data-pickw") === it.target ? "right" : x === b ? "wrong" : "dim"); });
+      Mic.chime(ok);
+      const res = $("#earres"); res.hidden = false;
+      res.innerHTML = `<div class="verdict ${ok ? "good" : "bad"}"><strong>${ok ? "¡Bien!" : "Era «" + esc(it.target) + "»"}</strong><span>${ok ? "Sonó «" + esc(it.target) + "», no «" + esc(it.other) + "»." : "Lo confundiste con «" + esc(it.other) + "». Escuchá las dos seguidas."}</span></div>
+        <div class="row"><button class="btn sm" data-act="both">${I.repeat} Escuchar las dos</button><button class="btn primary" data-act="next">${R.i < R.items.length - 1 ? "Siguiente" : "Ver resultado"} ${I.next}</button></div>`;
+      $("[data-act=both]").onclick = async () => { await TTS.say(it.target, 0.6, it.voice); await sleep(450); await TTS.say(it.other, 0.6, it.voice); };
+      $("[data-act=next]").onclick = () => { R.i++; R.picked = null; render(); };
+      res.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }));
+    setTimeout(() => { if (view.round === R && R.items[R.i] === it && R.picked == null) play(false); }, 350);
+  }
+
+  /* ---------- DECILO VOS: cualquier frase o palabra con evaluación ---------- */
+  function vDecir() {
+    const text = view.text || "";
+    const back = view.from || { name: "charla" };
+    app.innerHTML = `<div class="screen stack">${header("Decilo vos", view.label || "Practicá esta frase", true)}${engineCard()}
+      <section class="card"><p class="sentence">${esc(text)}</p>${view.label ? `<p class="hint">Se dice: <b>${esc(view.label)}</b></p>` : ""}
+      <div class="row" style="justify-content:center"><button class="btn sm" data-say="${esc(text)}">${I.speaker} Escuchar</button><button class="btn sm" data-say="${esc(text)}" data-slow>Lento</button>${text.trim().split(/\s+/).length === 1 ? `<button class="btn sm" data-word="${esc(text)}">${I.mouth} Boca</button>` : ""}</div>${stageHTML("Tocá y decilo")}</section>
+      <section class="card" id="resultcard" hidden><div class="stack" id="result"></div><button class="btn primary" id="nextbtn">Listo ${I.next}</button></section></div>`;
+    wireNav(back);
+    $("#nextbtn").onclick = () => go(back);
+    bindStage("sentence", async (audio) => {
+      const r = await analyzeSentence(audio, text);
+      $("#result").innerHTML = sentenceResultHTML(r);
+      if (!r.silent) { fillHeard(); if (view.hard) { ST.hard = ST.hard || {}; ST.hard[view.hard] = Math.max(ST.hard[view.hard] || 0, r.overall); markDay(); save(); } }
+      const card = $("#resultcard"); card.hidden = false; bindCommon(card); card.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, "Tocá y decilo");
+  }
+
+  /* ---------- PALABRAS DIFÍCILES ---------- */
+  function vDificiles() {
+    const hs = ST.hard || {};
+    app.innerHTML = `<div class="screen stack">${header("Palabras difíciles", "Las que más se pronuncian mal", true)}
+      <p class="muted">Al lado de cada palabra está cómo suena. La sílaba en mayúscula es la que lleva la fuerza. Escuchala, mirá la boca y decila para que te evalúe.</p>
+      ${X.HARD.map((gr) => `<section class="stack"><h3>${esc(gr.g)}</h3><div class="list hard">${gr.items.map((it) => `<div class="hitem"><div class="grow"><p class="hw">${esc(it.w)} <span class="hr">${esc(it.r)}</span>${hs[it.w] != null ? ` <span class="pill ${dimCls(hs[it.w])}">${hs[it.w]}</span>` : ""}</p><p class="small muted">${esc(it.t)}</p></div><div class="hbtns"><button class="mini" data-say="${esc(it.w)}" aria-label="Escuchar ${esc(it.w)}">${I.speaker}</button><button class="mini" data-say="${esc(it.w)}" data-slow>Lento</button><button class="mini" data-word="${esc(it.w)}" aria-label="Ver la boca">${I.mouth}</button><button class="mini acc" data-hard="${esc(it.w)}" data-hr="${esc(it.r)}" aria-label="Decila">${I.mic}</button></div></div>`).join("")}</div></section>`).join("")}
+    </div>`;
+    wireNav({ name: "sonidos" });
+    $$("[data-hard]").forEach((b) => (b.onclick = () => go({ name: "decir", text: b.getAttribute("data-hard"), hard: b.getAttribute("data-hard"), label: b.getAttribute("data-hr"), from: { name: "dificiles" } })));
   }
 
   /* ---- charla libre con Claude ---- */
@@ -1356,5 +1644,5 @@
   Eng.cached().then((c) => { if (c) Eng.start(); });
   if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
   document.addEventListener("visibilitychange", () => { if (document.hidden && Mic.state === "rec") Mic.stop(); });
-  window.__voz = { Eng, Mic, ST: () => ST, go, convAudio, aiAudio, openWord, conv: () => CONV, ai: () => AI };
+  window.__voz = { convText: (t, o) => convAnswer(Object.assign({ text: t, words: t.split(/\s+/).map((w) => ({ w, s: 80 })), wpm: 105, pauses: 0, seconds: 3 }, o || {})), conv: () => CONV, diagnose, Eng, Mic, ST: () => ST, go, convAudio, aiAudio, openWord, conv: () => CONV, ai: () => AI };
 })();

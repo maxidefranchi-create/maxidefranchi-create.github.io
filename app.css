@@ -267,3 +267,84 @@ body.sheet-open{overflow:hidden}
 .field input{font:inherit;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
 .field input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media (prefers-color-scheme:dark){.dock{box-shadow:0 8px 28px rgba(0,0,0,.45)}.sheet{background:rgba(0,0,0,.6)}}
+
+/* ---------- diagnóstico de la charla ---------- */
+.diag{gap:16px}
+.dtop{display:flex;gap:14px;align-items:center}
+.dscore{flex:none;width:78px;height:78px;border-radius:50%;display:grid;place-items:center;align-content:center;background:var(--accent-bg);color:var(--accent);border:3px solid currentColor}
+.dscore b{font-family:var(--display);font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
+.dscore span{font-size:11px;font-weight:700;color:var(--muted)}
+.dscore.sm{width:54px;height:54px;border-width:2px}.dscore.sm b{font-size:21px}
+.dscore.good{background:var(--good-bg);color:var(--good)}.dscore.mid{background:var(--mid-bg);color:var(--mid)}.dscore.bad{background:var(--bad-bg);color:var(--bad)}
+.dlevel{font-weight:700}
+.dims{display:flex;flex-direction:column;gap:9px}
+.dim{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr) 2.2em 3.2em;gap:8px;align-items:center;font-size:14px}
+.dims.mini .dim{grid-template-columns:minmax(0,9.5em) minmax(0,1fr) 2.2em;font-size:13px}
+.dim .dl{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dim b{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--display)}
+.dim .meter{height:8px;border-radius:4px}
+.meter i.good{background:var(--good)}.meter i.mid{background:var(--mid)}.meter i.bad{background:var(--bad)}
+.dd{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap}.dd.up{color:var(--good)}.dd.down{color:var(--bad)}
+.dnums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.dnums span{background:var(--bg);border-radius:10px;padding:8px 10px;font-size:13px;color:var(--muted)}
+.dnums b{display:block;font-family:var(--display);font-size:18px;color:var(--ink);font-variant-numeric:tabular-nums}
+.dlist{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.dlist.good li::marker{color:var(--good)}
+.focus{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:14px}
+.focus>li{display:flex;flex-direction:column;gap:8px}
+.focus>li::marker{font-family:var(--display);font-weight:700;color:var(--accent)}
+.focus>li>b{font-family:var(--display);font-size:17px}
+.better{background:var(--bg);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.better .said{font-size:14px;color:var(--muted)}
+.better .bt{font-weight:700}
+.row.tight{gap:6px;flex-wrap:wrap}
+.mini.acc{background:var(--accent);color:var(--on-accent)}
+.goal{display:flex;gap:8px;align-items:flex-start;background:var(--accent-bg);border-radius:12px;padding:10px 12px;font-size:15px}
+.goal svg{width:18px;height:18px;flex:none;color:var(--accent);margin-top:2px}
+.goalchk{border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;font-size:14px}
+.goalchk.good{background:var(--good-bg)}.goalchk.good b{color:var(--good)}
+.goalchk.mid{background:var(--mid-bg)}.goalchk.mid b{color:var(--mid)}
+.sparkline{width:100%;max-width:100%;height:auto;display:block}
+.sparkline .sgrid{stroke:var(--line);stroke-width:1;stroke-dasharray:3 4}
+.sparkline .sline{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.sparkline .sdot{fill:var(--accent);opacity:.55}
+.sparkline .slast{fill:var(--accent);stroke:var(--card);stroke-width:2}
+.sparkline .stxt{fill:var(--ink);font-family:var(--display);font-weight:700;font-size:13px}
+.diaghome{gap:12px}
+.cats{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;max-width:100%}
+.cats::-webkit-scrollbar{display:none}
+.catchip{flex:none;min-height:38px;padding:6px 14px;border-radius:99px;border:1px solid var(--line);background:var(--card);font-weight:700;font-size:14px;color:var(--muted)}
+.catchip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.sugcard{padding:14px;gap:8px}
+h3 .tiny{font-family:var(--body);font-weight:700;margin-left:4px}
+
+/* ---------- entrenar el oído ---------- */
+.ear{align-items:stretch;text-align:center}
+.earopts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.earbtn{min-height:84px;border-radius:18px;border:2px solid var(--line);background:var(--card);font-family:var(--display);font-weight:700;font-size:clamp(22px,7vw,30px);padding:8px;word-break:break-word;transition:transform .12s}
+.earbtn:active{transform:scale(.97)}
+.earbtn.right{border-color:var(--good);background:var(--good-bg);color:var(--good)}
+.earbtn.wrong{border-color:var(--bad);background:var(--bad-bg);color:var(--bad)}
+.earbtn.dim{opacity:.45}
+.dots i.miss{background:var(--bad);opacity:.6}
+.earcard{gap:12px}
+
+/* ---------- trucos y práctica en orden ---------- */
+.tricks{gap:14px}
+.trick{display:flex;flex-direction:column;gap:4px;border-left:3px solid var(--accent);padding-left:12px}
+.trick b{font-family:var(--display)}
+.tw{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-weight:700;font-size:15px;color:var(--accent)}
+.ladder .btn{justify-content:flex-start}
+.lstep{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;background:var(--bg);color:var(--ink)}
+.btn.primary .lstep{background:color-mix(in srgb,var(--on-accent) 22%,transparent);color:inherit}
+
+/* ---------- palabras difíciles ---------- */
+.list.hard{gap:0}
+.hitem{display:flex;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.hitem:last-child{border-bottom:0}
+.hw{font-family:var(--display);font-weight:700;font-size:19px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.hr{font-family:var(--body);font-size:15px;color:var(--accent);background:var(--accent-bg);border-radius:8px;padding:1px 8px}
+.hbtns{display:grid;grid-template-columns:repeat(2,auto);gap:5px;flex:none}
+@media (prefers-reduced-motion:reduce){.earbtn{transition:none}}
+.earcard>.row>div,.diaghome>.row>div{flex:1 1 0;min-width:0}
+.tricks h3{display:flex;gap:8px;align-items:center}.tricks h3 svg,.goal svg{width:20px;height:20px;flex:none;color:var(--accent)}
