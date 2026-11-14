@@ -325,7 +325,7 @@ h3 .tiny{font-family:var(--body);font-weight:700;margin-left:4px}
 .earbtn:active{transform:scale(.97)}
 .earbtn.right{border-color:var(--good);background:var(--good-bg);color:var(--good)}
 .earbtn.wrong{border-color:var(--bad);background:var(--bad-bg);color:var(--bad)}
-.earbtn.dim{opacity:.45}
+.earbtn.off{opacity:.45}
 .dots i.miss{background:var(--bad);opacity:.6}
 .earcard{gap:12px}
 
@@ -358,3 +358,61 @@ h3 .tiny{font-family:var(--body);font-weight:700;margin-left:4px}
 .keyrow b{font-family:var(--display)}
 .kes{font-size:14px;color:var(--muted)}
 .lesson{gap:10px}
+
+/* ---------- nivel 2: talleres, misiones, cuaderno, acento, entonación ---------- */
+.bt{font-weight:700}
+.tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tools.three{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tool{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;min-height:104px;box-shadow:var(--shadow);min-width:0}
+.tool b{font-family:var(--display);font-size:16px;line-height:1.15}
+.tool .small{line-height:1.25;overflow-wrap:anywhere}
+.tools.three .tool{padding:12px 10px;min-height:112px}.tools.three .tool b{font-size:15px}.tools.three .tool .small{font-size:12px}
+.ticon{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:var(--accent-bg);color:var(--accent);margin-bottom:2px}
+.ticon svg{width:20px;height:20px}
+.goals{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.goals li{display:flex;gap:8px;align-items:center;font-size:15px;line-height:1.3}
+.goals li.done{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--faint)}
+.gtick{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center}
+.goals li.done .gtick{background:var(--good);border-color:var(--good);color:var(--card)}
+.gtick svg{width:14px;height:14px}
+.prep{background:var(--bg);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.prep summary{cursor:pointer;font-weight:700;font-size:15px;display:flex;gap:6px;align-items:center}
+.prep summary svg{width:18px;height:18px;color:var(--accent);flex:none}
+.prep[open] summary{margin-bottom:8px}
+.prep .modelline{display:flex;gap:8px;align-items:center;margin:6px 0}
+.quizopts{display:flex;flex-direction:column;gap:8px}
+.btn.right,.syl.right{border-color:var(--good);background:var(--good-bg);color:var(--good)}
+.btn.wrong,.syl.wrong{border-color:var(--bad);background:var(--bad-bg);color:var(--bad)}
+.btn.off,.syl.off{opacity:.5}
+.sylrow{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.syl{min-height:64px;min-width:56px;padding:8px 14px;border-radius:16px;border:2px solid var(--line);background:var(--card);font-family:var(--display);font-weight:700;font-size:clamp(22px,7vw,30px)}
+.sdots{display:inline-flex;gap:5px;align-items:center;vertical-align:middle;margin-left:6px}
+.sdots i{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.45}
+.sdots i.big{width:16px;height:16px;opacity:1}
+.strong{color:var(--accent)}
+.pitch{width:100%;height:auto;display:block;background:var(--bg);border-radius:14px}
+.pitch .pmid{stroke:var(--line);stroke-width:1;stroke-dasharray:3 4}
+.pitch .ptail{fill:var(--accent-bg);opacity:.7}
+.pitch .pl{fill:none;stroke:var(--faint);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.pitch .pl.end{stroke:var(--accent);stroke-width:4}
+.pitch .ptxt{fill:var(--muted);font-size:10px;font-weight:700;font-family:var(--body)}
+.pat{width:100%;height:100%;display:block}
+.pat path{fill:none;stroke:var(--accent);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.badge.patb{padding:6px;background:var(--accent-bg)}
+.rulebox{display:flex;gap:12px;align-items:center;background:var(--accent-bg);border-radius:14px;padding:10px 12px}
+.patbig{flex:none;width:72px;height:30px}
+.exrow{display:flex;gap:10px;align-items:center}
+.exrow .grow{min-width:0}
+.hbtns.one{display:flex;gap:5px}
+.pathcard{gap:10px}
+.pathpct{font-family:var(--display);font-size:22px;color:var(--accent);font-variant-numeric:tabular-nums;flex:none}
+.badge.ok{background:var(--good-bg);color:var(--good)}.badge.ok svg{width:20px;height:20px}
+.pstep.now{background:var(--accent-bg)}
+.repans{font-family:var(--display);font-weight:700;font-size:20px;background:var(--bg);border-radius:12px;padding:10px 12px}
+.booknote{display:flex;gap:6px;align-items:center;justify-content:center}.booknote svg{width:16px;height:16px;color:var(--good);flex:none}
+.earopts.long{grid-template-columns:minmax(0,1fr)}
+.earopts.long .earbtn{font-size:20px;min-height:60px}
+.chip.did{border-color:var(--good);color:var(--good)}
+.genk{gap:8px}
+.repcard{gap:10px}
+.repcard>.row>div,.pathcard>.row>div{flex:1 1 0;min-width:0}

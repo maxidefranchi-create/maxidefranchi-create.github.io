@@ -18,6 +18,17 @@ La voz se analiza en el dispositivo. No se envía audio a ningún servidor.
 - **Trucos para cada sonido** y práctica en orden: oído, pares, palabras sueltas y frases.
 - **Palabras difíciles**: 287 palabras que más se pronuncian mal, en ocho grupos, con cómo suenan y evaluación con el micrófono.
 
+## Nivel 2
+
+- **Misiones**: 14 charlas donde las preguntas las hacés vos, con una lista de cosas para averiguar, corrección de cómo armás las preguntas y un mini examen de lo que entendiste.
+- **Armá tu charla**: un generador con 48 combinaciones (comprar, reservar, reclamar, charla casual, opinar y contar una historia) que cambia la persona, el acento y los detalles en cada pasada.
+- **Cuaderno y repaso**: tus correcciones, respuestas mejoradas y expresiones se guardan solas y vuelven a aparecer al día siguiente, a los 3 días, a la semana y así.
+- **Camino de pronunciación**: 31 pasos en orden, de las vocales a la entonación, que se marcan solos cuando los lográs.
+- **Acento de palabra**: 60 palabras para encontrar la sílaba fuerte.
+- **Entonación**: la app dibuja la melodía de tu voz y te dice si el final subió o bajó como corresponde. No necesita el reconocedor.
+- **Habla conectada**: ocho lecciones sobre cómo se pegan y se recortan las palabras (linking, formas débiles, contracciones, gonna y wanna, la t americana, can y can't, la -s final y el ritmo).
+- **Oído fino y trabalenguas**: can o can't, thirteen o thirty, contracciones, palabras que se confunden y 16 trabalenguas.
+
 ## Créditos
 
 - Reconocimiento: Whisper (OpenAI, licencia MIT), versión ONNX cuantizada de Xenova.
