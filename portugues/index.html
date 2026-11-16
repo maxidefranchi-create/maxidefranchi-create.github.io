@@ -70,6 +70,7 @@ p{margin:0}
 .bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
 .bar.sun i{background:var(--sun)}
 .btn{display:inline-flex;justify-content:center;align-items:center;border:0;border-radius:14px;padding:14px 18px;font-weight:700;background:var(--accent);color:var(--accent-ink);min-height:50px;text-align:center}
+a.btn{text-decoration:none}
 .btn.sun{background:var(--sun);color:var(--sun-ink)}
 .btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
 .btn.inv{background:var(--accent-ink);color:var(--accent)}
@@ -249,15 +250,35 @@ const IV=[1,1,3,7,16,35,90];
 /* ---------- AUDIO, MICRÓFONO, TUTOR ---------- */
 let tts=null,dict=null,ask=null,listening=false,micFor=null,micBase="";
 const inClaude=window.self!==window.top;
-const SRC=window.SpeechRecognition||window.webkitSpeechRecognition||null;
-let sr=null,srOff=false,lastConf=0,rec=null,recOff=false,recTimer=null;
-const canRec=()=>!recOff&&!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder);
+const AC=window.AudioContext||window.webkitAudioContext;
+const canRec=()=>!inClaude&&!!(AC&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
+const canASR=!inClaude&&/^http/.test(location.protocol)&&!!window.Worker;
+let actx=null,recS=null,wlOK=null;
+const WL='class R extends AudioWorkletProcessor{constructor(){super();this.b=new Float32Array(1024);this.n=0}process(i){const c=i[0]&&i[0][0];if(c){for(let k=0;k<c.length;k++){this.b[this.n++]=c[k];if(this.n===1024){this.port.postMessage(this.b.slice(0));this.n=0}}}return true}}registerProcessor("fala-rec",R);';
 const setL=b=>{listening=b;document.body.classList.toggle("listening",b)};
+function setRecBtn(){const b=$("#recbtn");if(b)b.textContent=recS?"Parar":"Grabar y analizar"}
+function resample(a,from,to){if(from===to)return a;const r=from/to,n=Math.floor(a.length/r),o=new Float32Array(n);for(let i=0;i<n;i++){const st=Math.floor(i*r),e=Math.min(a.length,Math.max(st+1,Math.floor((i+1)*r)));let q=0;for(let j=st;j<e;j++)q+=a[j];o[i]=q/(e-st)}return o}
+function wavBlob(a,sr){const b=new DataView(new ArrayBuffer(44+a.length*2)),w=(o,t)=>{for(let i=0;i<t.length;i++)b.setUint8(o+i,t.charCodeAt(i))};w(0,"RIFF");b.setUint32(4,36+a.length*2,true);w(8,"WAVEfmt ");b.setUint32(16,16,true);b.setUint16(20,1,true);b.setUint16(22,1,true);b.setUint32(24,sr,true);b.setUint32(28,sr*2,true);b.setUint16(32,2,true);b.setUint16(34,16,true);w(36,"data");b.setUint32(40,a.length*2,true);for(let i=0;i<a.length;i++)b.setInt16(44+i*2,Math.max(-1,Math.min(1,a[i]))*32767,true);return new Blob([b],{type:"audio/wav"})}
+function micErr(e){const n=e&&e.name||"";if(n==="NotAllowedError"||n==="SecurityError")return"El navegador tiene bloqueado el micrófono para esta app. En los Ajustes del teléfono buscá Safari (o tu navegador), poné Micrófono en «Permitir» o «Preguntar» y volvé a abrir la app.";if(n==="NotFoundError")return"No se encontró ningún micrófono en este dispositivo.";return"No se pudo abrir el micrófono ("+(n||"error")+"). Cerrá otras apps que lo estén usando y probá de nuevo."}
+let asrW=null,asrReady=null,asrId=0,asrProg=null;const asrCb={};
+function asrLoad(){if(asrReady)return asrReady;const pr=new Promise((res,rej)=>{try{asrW=new Worker("asr-worker.js",{type:"module"})}catch(e){rej(e);return}
+    asrW.onmessage=ev=>{const m=ev.data||{};if(m.type==="progress"){if(asrProg)asrProg(m)}else if(m.type==="ready")res();else if(m.type==="fail")rej(new Error(m.message));else if(asrCb[m.id]){const c=asrCb[m.id];delete asrCb[m.id];if(m.type==="result")c.res(m.text);else c.rej(new Error(m.message))}};
+    asrW.onerror=e=>rej(new Error(e.message||"no se pudo iniciar"));asrW.postMessage({type:"load",model:"whisper-base"})});
+  asrReady=pr;pr.catch(()=>{asrReady=null;try{asrW.terminate()}catch(e){}});return pr}
+async function transcribe(a,say){asrProg=m=>say("Descargando el reconocedor de voz. Es una sola vez. "+m.pct+"%");say("Preparando el reconocedor de voz…");await asrLoad();asrProg=null;say("Analizando tu voz…");
+  return new Promise((res,rej)=>{const id=++asrId;asrCb[id]={res,rej};asrW.postMessage({type:"run",id,audio:a},[a.buffer])})}
+async function gotAudio(a,rate,target){const o=$("#recout");if(o){o.src=URL.createObjectURL(wavBlob(a,rate));o.hidden=false}
+  const rh=rhythm(a,rate,target);let heard=null,err="";
+  if(canASR){try{heard=await transcribe(resample(a,rate,16000),t=>{if(curTarget===target)hint(t)});if(/amara|legendas/i.test(heard))heard=""}catch(e){err=String(e&&e.message||e)}}
+  if(curTarget!==target)return;const out=$("#recres"),inp=$("#ans");if(!out)return;let html="";
+  if(heard!=null){if(inp&&!inp.disabled)inp.value=heard;const r=speech(target,heard);html=`<b>Se entendió.</b> «${esc(heard||"nada")}»<br><span lang="pt-BR">${wordsHTML(r.ws)}</span><br>${r.score===1?"Todas las palabras se reconocieron. Tocá «Comprobar».":"Las palabras en rojo no se reconocieron. Escuchá el modelo y repetilas."}<br>`}
+  else if(canASR)html=`<b>El reconocedor no arrancó.</b> ${esc(err)}<br>`;
+  out.hidden=false;out.innerHTML=html+rh}
 function hint(t){const o=$("#recres");if(o){o.hidden=false;o.textContent=t}}
-function stopAll(){if(listening&&dict)dict.stop().catch(()=>{});if(sr){try{sr.stop()}catch(e){}}if(rec){try{rec.stop()}catch(e){}}}
+function stopAll(){if(listening&&dict)dict.stop().catch(()=>{});if(recS)recS.stop()}
 const synth=("speechSynthesis" in window)?window.speechSynthesis:null;
 const hasAudio=()=>!!(tts||synth);
-function caps(){document.body.classList.toggle("has-audio",hasAudio());document.body.classList.toggle("has-mic",!!dict||(!!SRC&&!srOff));document.body.classList.toggle("has-rec",canRec());document.body.classList.toggle("has-ai",!!ask)}
+function caps(){document.body.classList.toggle("has-audio",hasAudio());document.body.classList.toggle("has-mic",!!dict);document.body.classList.toggle("has-rec",canRec());document.body.classList.toggle("has-ai",!!ask)}
 function ptVoice(){try{return synth.getVoices().find(v=>/^pt[-_]BR/i.test(v.lang))||synth.getVoices().find(v=>/^pt/i.test(v.lang))||null}catch(e){return null}}
 async function say(text,rate){rate=rate||1;
   if(tts){try{await tts.speak(text,{language:"pt-BR",rate});return}catch(e){if(e&&e.code==="not_granted"){tts=null;caps()}else return}}
@@ -299,7 +320,7 @@ hoy(){const h=new Date().getHours(),g=h<12?["Bom dia","Buen día"]:h<19?["Boa ta
    <div class="card"><div class="row"><div class="grow"><h3>Repaso del día</h3><p class="small muted">${d?d+" frases esperan repaso":"Nada pendiente por ahora"}</p></div><button class="btn sun" data-a="review">Repasar</button></div></div>
    <div class="card"><p class="eyebrow">Sonido del día</p><h3>${esc(snd.t)}</h3><p class="small muted">${esc(snd.h)}</p><button class="btn ghost" data-a="sound" data-i="${si}">Practicar este sonido</button></div>
    <div class="card"><h3>Tu avance por nivel</h3>${lv}</div>
-   <p class="note warn no-audio">Esta vista no tiene audio. Abrí la app en Chrome para escuchar las frases y usar el micrófono.</p>
+   ${inClaude?`<div class="card"><h3>Para grabarte</h3><p class="small muted">Dentro de Claude el micrófono está bloqueado. La versión instalable graba tu voz y te escucha.</p><a class="btn sun" href="${MIC_URL}" target="_blank" rel="noopener">Abrir la versión con micrófono</a></div>`:""}<p class="note warn no-audio">Esta vista no tiene audio. Abrí la app en Chrome para escuchar las frases y usar el micrófono.</p>
   </div>`},
 curso(){const nx=nextUnit();let out="",lv="";UNITS.forEach((u,i)=>{if(u.lv!==lv){lv=u.lv;out+=`<p class="eyebrow" style="margin-top:6px">Nivel ${lv} · ${lv==="A1"?"Primeros pasos":lv==="A2"?"Arreglarte solo":"Soltura"}</p>`}
     const s=seen(u),dn=s===u.items.length;out+=`<button class="unit${dn?" done":""}${u===nx?" next":""}" data-a="unit" data-id="${u.id}"><span class="n">${i+1}</span><span class="grow"><b>${esc(u.t)}</b><span class="bar" style="margin-top:8px"><i style="width:${s/u.items.length*100}%"></i></span></span><span class="small muted">${s}/${u.items.length}</span></button>`});
@@ -322,18 +343,20 @@ repaso(){const d=due().length,ks=Object.keys(S.srs).filter(k=>ES[k]),fresh=ks.fi
 /* ---------- SESIONES ---------- */
 function topBar(pct,title){return`<div class="ses-top"><button class="x" data-a="close" aria-label="Cerrar">×</button>${pct==null?`<h3 class="grow">${esc(title||"")}</h3>`:`<div class="bar grow"><i style="width:${pct}%"></i></div>`}</div>`}
 let curTarget="";
-function speakBox(target,val,dis){curTarget=target;return`<p class="small muted">Tocá el micrófono amarillo y decí la frase. La app marca qué palabras se entendieron. Si no lo ves, usá el micrófono del teclado en portugués.</p>
+function speakBox(target,val,dis){curTarget=target;return`<p class="small muted">${inClaude&&!dict?"Dentro de Claude el micrófono está bloqueado. Para grabarte y que te escuche, abrí la versión con micrófono. Acá podés dictar con el micrófono del teclado en portugués.":inClaude?"Tocá el micrófono amarillo y decí la frase. La app marca qué palabras se entendieron.":"Tocá «Grabar y analizar» y decí la frase. La grabación corta sola cuando terminás y el teléfono marca qué palabras se entendieron."}</p>
   <div class="row"><input class="field grow" id="ans" lang="pt-BR" autocomplete="off" autocapitalize="off" placeholder="Lo que dijiste aparece acá" value="${esc(val||"")}"${dis?" disabled":""}><button class="mic need-mic" data-a="mic" data-for="ans" aria-label="Hablar">${ICON_MIC}</button></div>
-  <div class="row wrap"><button class="btn sun small need-rec" id="recbtn" data-a="rec" style="min-height:0;padding:10px 14px">${rec?"Parar y analizar":"Grabarme"}</button><label class="btn ghost small" style="min-height:0;padding:10px 14px">Subir un audio<input type="file" accept="audio/*" id="rec" hidden></label></div><audio id="recout" controls hidden></audio><div id="recres" class="note small" hidden></div>`}
+  <div class="row wrap"><button class="btn sun need-rec" id="recbtn" data-a="rec">${recS?"Parar":"Grabar y analizar"}</button>${inClaude?`<a class="btn sun small" style="min-height:0;padding:10px 14px" href="${MIC_URL}" target="_blank" rel="noopener">Abrir la versión con micrófono</a>`:""}<label class="btn ghost small" style="min-height:0;padding:10px 14px">Subir un audio<input type="file" accept="audio/*" id="rec" hidden></label></div><audio id="recout" controls hidden></audio><div id="recres" class="note small" hidden></div>`}
 function coachHTML(h){if(h.coach)return`<div class="fix"><b>${esc(h.coach.v)}</b>${h.coach.c.length?`<ul>${h.coach.c.map(c=>`<li>${esc(c)}</li>`).join("")}</ul>`:""}</div>`;
   return`<button class="btn ghost full need-ai" data-a="coach"${h.busy?" disabled":""}>${h.busy?"Analizando…":"Analizar mi pronunciación con el tutor"}</button>`}
 const median=a=>{a=a.slice().sort((x,y)=>x-y);return a[Math.floor(a.length/2)]};
-async function analyze(file,target){const out=$("#recres");if(!out)return;out.hidden=false;out.textContent="Analizando tu audio…";
-  try{const AC=window.AudioContext||window.webkitAudioContext,ac=new AC(),buf=await ac.decodeAudioData(await file.arrayBuffer());try{ac.close()}catch(e){}
-    const d=buf.getChannelData(0),sr=buf.sampleRate,fl=Math.round(sr*.02),n=Math.floor(d.length/fl),rms=new Float32Array(n);let peak=0;
+async function analyze(file,target){hint("Leyendo tu audio…");let buf;
+  try{const ac=new AC();buf=await ac.decodeAudioData(await file.arrayBuffer());try{ac.close()}catch(e){}}catch(e){hint("No pude leer ese audio. Probá con otra grabación o con otro formato.");return}
+  gotAudio(buf.getChannelData(0),buf.sampleRate,target)}
+function rhythm(d,sr,target){
+    const fl=Math.round(sr*.02),n=Math.floor(d.length/fl),rms=new Float32Array(n);let peak=0;
     for(let i=0;i<n;i++){let q=0;for(let j=i*fl;j<(i+1)*fl;j++)q+=d[j]*d[j];rms[i]=Math.sqrt(q/fl);if(rms[i]>peak)peak=rms[i]}
     const th=Math.max(.006,peak*.12);let a=0,b=n-1;while(a<n&&rms[a]<th)a++;while(b>a&&rms[b]<th)b--;
-    const span=(b-a+1)*.02;if(peak<.01||span<.3){out.textContent="Casi no se escucha voz en la grabación. Grabá más cerca del micrófono y probá de nuevo.";return}
+    const span=(b-a+1)*.02;if(peak<.01||span<.3)return"Casi no se escucha voz en la grabación. Grabá más cerca del micrófono y probá de nuevo.";
     let pauses=0,pauseT=0,run=0;for(let i=a;i<=b;i++){if(rms[i]<th)run++;else{if(run>=18){pauses++;pauseT+=run*.02}run=0}}
     const talk=Math.max(.2,span-pauseT),syl=(target.match(/[aeiouáàâãéêíóôõúü]+/gi)||[]).length,rate=syl/talk;
     const f0=[],w=Math.round(sr*.04),lo=Math.floor(sr/350),hi=Math.floor(sr/75);
@@ -347,9 +370,7 @@ async function analyze(file,target){const out=$("#recres");if(!out)return;out.hi
       const isQ=/\?\s*$/.test(target)&&!/^(o que|que|quem|onde|como|quando|quanto|qual|por que)\b/i.test(target);
       if(isQ){const end=Math.max(...f0.filter(x=>x.t>.65).map(x=>x.f),0);L.push(`<b>Entonación.</b> `+(end>=med*1.1?"La voz sube al final, como pide una pregunta.":"No se nota la subida al final. En portugués esta pregunta se marca solo con la voz, subí en la última sílaba fuerte."))}
       else L.push(`<b>Entonación.</b> `+(rng<.12?"Sale plana. El portugués de Brasil es más cantado, marcá bien la sílaba fuerte de cada palabra.":"Buena melodía, con subidas y bajadas marcadas."))}
-    L.push(`<span class="muted">Esto mide ritmo y melodía de tu grabación. Para saber si cada palabra se entiende, usá el micrófono o el dictado y después «Comprobar».</span>`);
-    out.innerHTML=L.join("<br>")}
-  catch(e){out.textContent="No pude leer ese audio. Probá con otra grabación o con otro formato."}}
+    return L.join("<br>")}
 function speech(target,heard){const hw=norm(heard).split(" ");const ws=target.split(" ").map(w=>{const t=norm(w);return{w,ok:!t||hw.some(h=>h===t||(t.length>3&&lev(h,t)<=1))}});return{ws,score:ws.filter(x=>x.ok).length/ws.length}}
 const wordsHTML=ws=>ws.map(x=>`<span class="${x.ok?"w-ok":"w-no"}">${esc(x.w)}</span>`).join(" ");
 function getOpts(x,f){if(!x.opts){let pool=(ses.pool||ALL).filter(o=>o[f]!==x.it[f]);if(pool.length<3)pool=ALL.filter(o=>o[f]!==x.it[f]);const ds=[...new Set(shuffle(pool).map(o=>o[f]))].slice(0,3);x.opts=shuffle(ds.concat(x.it[f]))}return x.opts}
@@ -431,7 +452,7 @@ check(){const x=ses.ex[ses.i],k=kindOf(x),it=x.it;
   if(k==="build"){if(!ses.sel.length)return;finish(norm(ses.sel.map(i=>x.bank[i]).join(" "))===norm(it.pt),x)}
   else{const v=($("#ans")||{}).value||"";if(!v.trim())return;x.val=v;
     if(k==="type"){const a=norm(v),b=norm(it.pt),ok=a===b||(b.length>5&&lev(a,b)<=1);x.msg=ok&&soft(v)!==soft(it.pt)?"Bien. Mirá los acentos y la ortografía exacta.":"";finish(ok,x)}
-    else{const r=speech(it.pt,v);x.ws=r.ws;x.msg=r.score>=.7&&r.score<1?"Casi perfecta. Repetí las palabras marcadas.":r.score<.7?"Escuchá la versión lenta y probá otra vez.":"";if(lastConf>0){x.msg=(x.msg?x.msg+" ":"")+`El reconocedor te entendió con ${Math.round(lastConf*100)}% de seguridad.`;lastConf=0}finish(r.score>=.7,x)}}},
+    else{const r=speech(it.pt,v);x.ws=r.ws;x.msg=r.score>=.7&&r.score<1?"Casi perfecta. Repetí las palabras marcadas.":r.score<.7?"Escuchá la versión lenta y probá otra vez.":"";finish(r.score>=.7,x)}}},
 skip(){ses.total--;ACT.next(true)},
 next(){ses.i++;ses.state=null;ses.sel=[];ses.fresh=true;if(ses.i>=ses.ex.length)endLesson();else{render();const x=ses.ex[ses.i];if(kindOf(x)==="listen")say(x.it.pt)}},
 review(){startReview()},
@@ -453,25 +474,27 @@ async coach(){if(!ask)return;const my=ses,dl=my.kind==="dialog",h=dl?my.res:my.e
   catch(e){if(e&&e.code==="not_granted"){ask=null;caps()}h.coach={v:"No llegó el análisis. Probá de nuevo en un momento.",c:[]}}
   h.busy=false;if(ses===my)render()},
 tip(el){const i=$("#chatin");if(i){i.value=el.dataset.t;i.focus()}},
-mic(el){micFor=el.dataset.for;const i=document.getElementById(micFor);
-  if(dict){if(listening){dict.stop().catch(()=>{});return}micBase=i?i.value.trim():"";try{dict.start().catch(e=>{if(e&&e.code==="not_granted"){dict=null;caps()}})}catch(e){}return}
-  if(!SRC||srOff)return;if(sr){try{sr.stop()}catch(e){}return}if(rec){try{rec.stop()}catch(e){}}
-  const keep=micFor==="chatin"&&i?i.value.trim():"",r=new SRC();r.lang="pt-BR";r.interimResults=true;r.continuous=false;
-  r.onresult=e=>{let t="";for(let k=0;k<e.results.length;k++){t+=e.results[k][0].transcript+" ";if(e.results[k].isFinal)lastConf=e.results[k][0].confidence||0}const x=document.getElementById(micFor);if(x)x.value=(keep+" "+t).replace(/\s+/g," ").trim()};
-  r.onerror=e=>{if(e.error==="not-allowed"||e.error==="service-not-allowed"){srOff=true;caps();hint(inClaude?"Dentro de Claude el micrófono está bloqueado. Usá la versión instalada en tu teléfono o el micrófono del teclado.":"El navegador no dio acceso al micrófono. Habilitá el permiso del sitio y probá de nuevo.")}else if(e.error==="no-speech")hint("No se escuchó nada. Tocá el micrófono y hablá enseguida.")};
-  r.onend=()=>{if(sr===r)sr=null;setL(false)};sr=r;lastConf=0;setL(true);try{r.start()}catch(e){sr=null;setL(false)}},
-async rec(){if(rec){try{rec.stop()}catch(e){}return}if(sr){try{sr.stop()}catch(e){}}
-  let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){recOff=true;caps();hint(inClaude?"Dentro de Claude el micrófono está bloqueado. Usá la versión instalada en tu teléfono, o subí un audio.":"El navegador no dio acceso al micrófono. Habilitá el permiso del sitio y recargá la página.");return}
-  const chunks=[],target=curTarget;let r;try{r=new MediaRecorder(stream)}catch(e){stream.getTracks().forEach(t=>t.stop());recOff=true;caps();return}
-  r.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
-  r.onstop=()=>{clearTimeout(recTimer);stream.getTracks().forEach(t=>t.stop());if(rec===r)rec=null;document.body.classList.remove("recording");const b=$("#recbtn");if(b)b.textContent="Grabarme";
-    const blob=new Blob(chunks,{type:r.mimeType||"audio/webm"}),o=$("#recout");if(o){o.src=URL.createObjectURL(blob);o.hidden=false}analyze(blob,target)};
-  rec=r;r.start();document.body.classList.add("recording");const b=$("#recbtn");if(b)b.textContent="Parar y analizar";hint("Grabando. Decí la frase y tocá «Parar y analizar».");
-  recTimer=setTimeout(()=>{if(rec===r){try{r.stop()}catch(e){}}},20000)}
+mic(el){if(!dict)return;micFor=el.dataset.for;const i=document.getElementById(micFor);
+  if(listening){dict.stop().catch(()=>{});return}micBase=i?i.value.trim():"";try{dict.start().catch(e=>{if(e&&e.code==="not_granted"){dict=null;caps()}})}catch(e){}},
+async rec(){if(recS){recS.stop();return}const target=curTarget;let stream,ctx;
+  try{ctx=actx||(actx=new AC());if(ctx.state!=="running"){try{await ctx.resume()}catch(e){}}
+    stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}})}
+  catch(e){hint(micErr(e));return}
+  if(wlOK===null){wlOK=false;if(ctx.audioWorklet&&window.AudioWorkletNode){try{await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([WL],{type:"application/javascript"})));wlOK=true}catch(e){}}}
+  const src=ctx.createMediaStreamSource(stream),sink=ctx.createGain(),rate=ctx.sampleRate,buf=[],early=[];sink.gain.value=0;sink.connect(ctx.destination);
+  let node=null,t=0,spoke=false,last=0,done=false,floor=.003;
+  const finish=()=>{if(done)return;done=true;recS=null;try{src.disconnect();node.disconnect();sink.disconnect()}catch(e){}stream.getTracks().forEach(x=>x.stop());document.body.classList.remove("recording");setRecBtn();
+    let n=0;buf.forEach(c=>n+=c.length);const a=new Float32Array(n);let o=0;buf.forEach(c=>{a.set(c,o);o+=c.length});
+    if(!spoke){hint("No se escuchó voz. Tocá «Grabar y analizar» y hablá enseguida, cerca del micrófono.");return}gotAudio(a,rate,target)};
+  const onChunk=c=>{if(done)return;buf.push(c);t+=c.length/rate;let q=0;for(let i=0;i<c.length;i++)q+=c[i]*c[i];const r=Math.sqrt(q/c.length);
+    if(t<.25){early.push(r);floor=Math.max(.002,early.slice().sort((x,y)=>x-y)[Math.floor(early.length/2)])}
+    if(t>.25&&r>Math.max(.008,floor*3)){spoke=true;last=t}if((spoke&&t-last>1.4)||(!spoke&&t>7)||t>25)finish()};
+  if(wlOK){node=new AudioWorkletNode(ctx,"fala-rec");node.port.onmessage=e=>onChunk(e.data)}else{node=ctx.createScriptProcessor(4096,1,1);node.onaudioprocess=e=>onChunk(new Float32Array(e.inputBuffer.getChannelData(0)))}
+  src.connect(node);node.connect(sink);recS={stop:finish};document.body.classList.add("recording");setRecBtn();hint("Grabando. Decí la frase; corta sola cuando terminás.")}
 };
 document.addEventListener("click",e=>{const el=e.target.closest("[data-a]");if(el&&ACT[el.dataset.a])ACT[el.dataset.a](el)});
 document.addEventListener("keydown",e=>{if(e.key!=="Enter"||!ses)return;if(e.target.id==="chatin"){e.preventDefault();ACT.send()}else if(e.target.id==="ans"){e.preventDefault();if(ses.kind==="dialog")ACT.dlgcheck();else if(!ses.state)ACT.check()}});
-document.addEventListener("change",e=>{if(e.target.id!=="rec")return;const f=e.target.files&&e.target.files[0],o=$("#recout");if(f&&o){o.src=URL.createObjectURL(f);o.hidden=false;analyze(f,curTarget)}});
+document.addEventListener("change",e=>{if(e.target.id!=="rec")return;const f=e.target.files&&e.target.files[0],o=$("#recout");if(f)analyze(f,curTarget)});
 function route(){const h=location.hash.replace("#","");view=VIEWS.includes(h)?h:"hoy";ses=null;render()}
 window.addEventListener("hashchange",route);
 if(synth){try{synth.getVoices();synth.onvoiceschanged=()=>{}}catch(e){}}
