@@ -1,13 +1,14 @@
 {
  "name": "Fala Português",
  "short_name": "Fala",
- "description": "Portugués de Brasil desde cero",
+ "description": "Portugués de Brasil desde cero, con análisis de tu voz en el teléfono.",
  "lang": "es",
  "start_url": "./",
  "scope": "./",
- "display": "minimal-ui",
- "background_color": "#F2F4EE",
- "theme_color": "#0B7D56",
+ "display": "standalone",
+ "orientation": "portrait",
+ "background_color": "#0A0F0D",
+ "theme_color": "#087A54",
  "icons": [
   {
    "src": "icon-192.png",
